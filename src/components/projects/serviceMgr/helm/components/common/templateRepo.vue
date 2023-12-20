@@ -56,13 +56,12 @@
 import CommonImportValues from '@/components/projects/common/importValues/index.vue'
 import ImportValues from './templateRepo/importValues.vue'
 import {
-  createTemplateServiceAPI,
-  updateTemplateServiceAPI,
-  createTemplateMultiServiceAPI,
+  createHelmTemplateServiceAPI,
+  updateHelmTemplateServiceAPI,
+  createHelmTemplateMultiServiceAPI,
   getChartTemplatesAPI,
   getHelmTemplateVariableAPI
 } from '@api'
-import { mapState } from 'vuex'
 export default {
   name: 'TemplateRepo',
   data () {
@@ -88,15 +87,31 @@ export default {
     currentSelect: String
   },
   computed: {
-    ...mapState({
-      currentService: state => state.serviceManage.currentService
-    }),
+    currentService () {
+      return this.$store.state.serviceHelm.currentService
+    },
     projectName () {
       return this.$route.params.project_name
     },
     rules () {
+      const validateServiceName = (rule, value, callback) => {
+        if (value === '') {
+          callback(new Error(this.$t('services.common.inputServiceName')))
+        } else {
+          if (!/^[a-z0-9-]+$/.test(value)) {
+            callback(new Error(this.$t('services.k8s.checkServiceName')))
+          } else {
+            callback()
+          }
+        }
+      }
       return {
-        serviceName: [{ required: true, message: this.$t('services.common.inputServiceName'), trigger: 'blur' }],
+        serviceName: [{
+          type: 'string',
+          required: true,
+          validator: validateServiceName,
+          trigger: ['blur', 'change']
+        }],
         moduleName: [{ required: true, message: '请选择模板', trigger: ['blur', 'change'] }]
       }
     }
@@ -141,6 +156,7 @@ export default {
           this.variables = createFrom.variables || []
           this.isUpdate = true
         } else {
+          this.closeSelectRepo()
           this.isUpdate = false
         }
       },
@@ -203,12 +219,13 @@ export default {
         valuesData: {
           yamlSource: 'repo',
           gitRepoConfig: this.importRepoInfo.gitRepoConfig
-        }
+        },
+        production: false
       }
       if (this.importRepoInfo.gitRepoConfig && this.importRepoInfo.gitRepoConfig.autoSync) {
         payload.valuesData.autoSync = this.importRepoInfo.gitRepoConfig.autoSync
       }
-      const reqApi = this.isUpdate ? updateTemplateServiceAPI : createTemplateServiceAPI
+      const reqApi = this.isUpdate ? updateHelmTemplateServiceAPI : createHelmTemplateServiceAPI
       const res = await reqApi(projectName, payload).catch(
         err => {
           console.log(err)
@@ -224,11 +241,10 @@ export default {
           this.$message.error(res.failedServices[0].error)
         }
         this.commitDialogVisible(false)
-        this.$store.dispatch('queryService', {
+        this.$store.dispatch('getHelmServices', {
           projectName: this.projectName,
           showServiceName: payload.name
         })
-
         this.$store.commit('CHART_NAMES', res.successServices.map(service => {
           return {
             serviceName: service,
@@ -254,7 +270,8 @@ export default {
       const sId = setTimeout(() => {
         this.$message.info('服务过多，请耐心等待！')
       }, 5000)
-      const res = await createTemplateMultiServiceAPI(
+      let res = null
+      res = await createHelmTemplateMultiServiceAPI(
         projectName,
         payload
       ).catch(err => {
@@ -264,18 +281,16 @@ export default {
       this.importLoading = false
       if (res) {
         this.commitDialogVisible(false)
-        this.$store.dispatch('queryService', {
+        this.$store.dispatch('getHelmServices', {
           projectName: this.projectName,
           showServiceName: res.successServices[0]
         })
-
         this.$store.commit('CHART_NAMES', res.successServices.map(service => {
           return {
             serviceName: service,
             type: 'create'
           }
         }))
-
         if (res.failedServices.length) {
           this.$message.success(`创建部分服务成功`)
           let message = ``

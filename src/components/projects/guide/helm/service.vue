@@ -10,7 +10,7 @@
       </div>
     </div>
   <div class="content">
-    <Code ref="code" :service="serviceList" isCreate isGuide />
+    <ServiceHelm ref="code" :service="serviceList" isCreate isGuide />
   </div>
       <div class="controls__wrap">
       <div class="controls__right">
@@ -25,12 +25,12 @@
 <script>
 import { mapState } from 'vuex'
 import Step from '../common/step.vue'
-import Code from '../../serviceMgr/helm/code'
+import ServiceHelm from '../../serviceMgr/serviceHelm.vue'
 
 export default {
   name: 'service_helm',
   components: {
-    Code,
+    ServiceHelm,
     Step
   },
   data () {
@@ -43,7 +43,7 @@ export default {
       this.$router.push(`/v1/projects/create/${this.projectName}/helm/runtime?serviceName=${this.serviceName}&serviceType=${this.serviceType}`)
     },
     async querytHelmChartService () {
-      this.$store.dispatch('queryService', { projectName: this.projectName })
+      this.$store.dispatch('getHelmServices', { projectName: this.projectName })
     }
   },
   computed: {
@@ -51,7 +51,7 @@ export default {
       return this.$route.params.project_name
     },
     ...mapState({
-      showNext: (state) => state.serviceManage.showNext
+      showNext: (state) => state.serviceHelm.showNext
     }),
     serviceName () {
       return this.$route.query.service_name

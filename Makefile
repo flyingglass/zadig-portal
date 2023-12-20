@@ -21,7 +21,14 @@ prereq:
 	@sed -i 's/$${BRANCH}/${zadig_portal_BRANCH}/g' config/prod.env.js
 	@sed -i 's/$${PR}/${zadig_portal_PR}/g' config/prod.env.js
 	@sed -i 's/$${TAG}/${zadig_portal_TAG}/g' config/prod.env.js
+	@sed -i 's/$${VERSION}/${VERSION}/g' static/version.json
+	@sed -i 's/$${BUILD_TIME}/${BUILD_TIME}/g' static/version.json
+	@sed -i 's/$${COMMIT_ID}/${zadig_portal_COMMIT_ID}/g' static/version.json
+	@sed -i 's/$${BRANCH}/${zadig_portal_BRANCH}/g' static/version.json
+	@sed -i 's/$${PR}/${zadig_portal_PR}/g' static/version.json
+	@sed -i 's/$${TAG}/${zadig_portal_TAG}/g' static/version.json
 	@cat config/prod.env.js
+	@cat static/version.json
 
 all: prereq
 all:

@@ -7,8 +7,8 @@
       :data="nodeData"
       :render-content="renderContent"
       :default-expanded-keys="expandKey"
-      @node-contextmenu="handleNodeClick"
       @node-click="addExpandFileList"
+      highlight-current
     ></el-tree>
   </div>
 </template>
@@ -188,8 +188,10 @@ export default {
         this.changeModalStatus(position, true, null)
       }
     },
-    handleNodeClick (e, data) {
-      // Todo
+    setServiceSelected (key) {
+      this.$nextTick(() => {
+        this.$refs.tree.setCurrentKey(key)
+      })
     }
   },
   mounted () {
@@ -213,6 +215,10 @@ export default {
 
     /deep/ .el-tree-node {
       overflow: hidden;
+
+      &.is-current > .el-tree-node__content {
+        background-color: #06f3;
+      }
     }
 
     /deep/ .custom-tree-node {

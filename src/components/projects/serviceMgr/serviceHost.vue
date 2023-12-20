@@ -14,9 +14,9 @@
 </template>
 <script>
 import ServiceBuild from '@/components/projects/common/hosting/serviceBuild'
-import Policy from './k8s/container/policy.vue'
+import Policy from './k8s/common/policy.vue'
 
-import { listProductAPI } from '@/api'
+import { listProductAPI } from '@api'
 export default {
   name: 'service_host',
   components: {
@@ -45,7 +45,7 @@ export default {
       envNameList.forEach(element => {
         element.envName = element.name
       })
-      this.envNameList = envNameList
+      this.envNameList = envNameList.filter(re => !re.production)
     }
   },
   async created () {

@@ -7,7 +7,7 @@
       <div class="pane left" :style="{width: '250px', maxWidth: '400px'}">
         <div class="top">
           <el-tooltip effect="dark" :content="$t(`templates.helmChart.createTemplate`)" placement="top">
-            <el-button v-hasPermi="{type: 'system', action: 'create_template',isBtn:true}" icon="el-icon-plus" circle size="mini" @click="chartDialogVisible = !chartDialogVisible"></el-button>
+            <el-button v-hasPermi="{type: 'system', action: 'create_template'}" icon="el-icon-plus" circle size="mini" @click="chartDialogVisible = !chartDialogVisible"></el-button>
           </el-tooltip>
         </div>
         <Folder

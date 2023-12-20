@@ -55,10 +55,15 @@ export default {
   computed: {
     rules () {
       const validatePass = (rule, value, callback) => {
+        const reg = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
         if (!value) {
           callback(new Error(this.$t(`login.inputPass`)))
-        } else if (value.length < 8) {
-          callback(new Error(this.$t(`login.passwordLength`)))
+        } else if (!reg.test(value)) {
+          callback(
+            new Error(
+              this.$t('global.passwordStrengthTip')
+            )
+          )
         } else {
           if (this.form.checkPass) {
             this.$refs.form.validateField('checkPass')
@@ -67,10 +72,15 @@ export default {
         }
       }
       const validateConfirmedPass = (rule, value, callback) => {
+        const reg = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
         if (!value) {
           callback(new Error(this.$t(`login.inputNewPassAgain`)))
-        } else if (value.length < 8) {
-          callback(new Error(this.$t(`login.passwordLength`)))
+        } else if (!reg.test(value)) {
+          callback(
+            new Error(
+              this.$t('global.passwordStrengthTip')
+            )
+          )
         } else if (value !== this.form.password) {
           callback(new Error(this.$t(`login.passwordDontMatch`)))
         } else {
@@ -113,7 +123,7 @@ export default {
           )
           if (res) {
             this.$message.success(this.$t(`login.resetSuccess`))
-            this.openLogin()
+            this.openLogin(true)
           }
         }
       })

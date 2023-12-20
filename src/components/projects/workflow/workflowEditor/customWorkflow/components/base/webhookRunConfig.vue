@@ -2,7 +2,7 @@
   <div class="custom-workflow">
     <el-form label-position="left" label-width="130px" size="small">
       <el-collapse v-model="activeName">
-        <el-collapse-item title="工作流变量" name="env" class="mg-l8" v-if="payload.params && payload.params.length>0&&isShowParams">
+        <el-collapse-item title="工作流变量" name="env" class="mg-l8" v-if="payload.params && payload.params.length>0">
           <el-table :data="payload.params.filter(item=>item.isShow)">
             <el-table-column :label="$t(`global.key`)">
               <template slot-scope="scope">{{scope.row.name}}</template>
@@ -21,13 +21,14 @@
                   style="width: 220px;"
                 ></el-input>
                 <el-input
-                  v-if="scope.row.type === 'string'"
+                  v-else-if="scope.row.type === 'string'"
                   class="password"
                   v-model="scope.row.value"
                   size="small"
                   type="text"
                   style="width: 220px;"
                 ></el-input>
+              <VarBranchSelect v-if="scope.row.type === 'repo'" :originRepo="scope.row.repo" />
               </template>
             </el-table-column>
           </el-table>
@@ -38,11 +39,10 @@
             :title="`${job.name}`"
             :key="job.name"
             :name="`${stageIndex}${jobIndex}`"
-            class="mg-l8"
           >
             <template slot="title">
               <!-- <el-checkbox v-model="job.skipped"></el-checkbox> -->
-              <el-switch v-model="job.skipped" :active-value="false" :inactive-value="true" @click.stop.native></el-switch>
+              <el-switch v-model="job.skipped"  @click.stop.native :active-value="false" :inactive-value="true" :disabled="job.run_policy==='force_run'" @change="handleSwitchChange($event, stageIndex, jobIndex)"></el-switch>
               <span class="mg-l8">{{job.name}}</span>
             </template>
             <div v-if="job.type === 'zadig-build'">
@@ -56,8 +56,20 @@
                   value-key="value"
                   size="small"
                   style="width: 220px;"
-                  @change="handleServiceBuildChange($event,job)"
+                  @change="handleServiceBuildChange($event, job, 'zadig-build')"
                 >
+                  <el-option
+                    disabled
+                    :label="$t(`global.selectAll`)"
+                    value="ALL"
+                    :class="{selected: job.pickedTargets && job.pickedTargets.length === job.spec.service_and_builds.length}"
+                    style="color: #606266;"
+                  >
+                    <span
+                      style=" display: inline-block; width: 100%; font-weight: normal; cursor: pointer;"
+                      @click="job.pickedTargets=job.spec.service_and_builds;handleServiceBuildChange(job.pickedTargets, job, 'zadig-build')"
+                    >{{$t(`global.selectAll`)}}</span>
+                  </el-option>
                   <el-option
                     v-for="(service,index) of job.spec.service_and_builds"
                     :key="index"
@@ -69,18 +81,19 @@
                   </el-option>
                 </el-select>
               </el-form-item>
-              <el-form-item :label="$t(`status.imageRepo`)" prop="docker_registry_id">
-                <el-select v-model="job.spec.docker_registry_id" filterable placeholder="请选择镜像" size="small" style="width: 220px;">
-                  <el-option v-for="item in dockerList" :key="item.id" :label="`${item.reg_addr}/${item.namespace}`" :value="item.id"></el-option>
-                </el-select>
-              </el-form-item>
               <div v-if="job.pickedTargets">
                 <CustomWorkflowBuildRows :pickedTargets="job.pickedTargets" :elSelectWidth="'140px'" />
               </div>
             </div>
             <div v-if="job.type === 'zadig-deploy'">
-              <el-form-item prop="productName" :label="$t(`project.environments`)" v-if="!(job.spec.env.includes('fixed')||job.spec.env.includes('{{'))">
-                <el-select v-model="job.spec.env" size="small" @change="getRegistryId(job.spec.env)" style="width: 220px;">
+              <el-form-item prop="productName" :label="$t(`project.environments`)">
+                <el-select
+                  v-model="job.spec.env"
+                  :disabled="job.spec.envType==='fixed'"
+                  size="medium"
+                  @change="handleDeployChange(job, job.pickedTargets)"
+                  style="width: 220px;"
+                >
                   <el-option
                     v-for="pro of currentProjectEnvs"
                     :key="`${pro.projectName} / ${pro.name}`"
@@ -90,11 +103,6 @@
                     <span>{{`${pro.projectName} / ${pro.name}`}}</span>
                   </el-option>
                 </el-select>
-                <el-tooltip v-if="specificEnv" effect="dark" content="该工作流已指定环境运行，可通过修改 工作流->基本信息 来解除指定环境绑定" placement="top">
-                  <span>
-                    <i style="color: #909399;" class="el-icon-question"></i>
-                  </span>
-                </el-tooltip>
               </el-form-item>
               <el-form-item :label="$t(`global.serviceModule`)" v-if="job.spec.source === 'runtime'">
                 <el-select
@@ -104,14 +112,26 @@
                   clearable
                   reserve-keyword
                   value-key="value"
-                  size="small"
+                  size="medium"
                   style="width: 220px;"
-                  @change="handleServiceDeployChange"
+                  @change="handleRuntimeServiceChange(job, job.pickedTargets)"
                 >
+                  <el-option
+                    disabled
+                    :label="$t(`global.selectAll`)"
+                    value="ALL"
+                    :class="{selected: job.pickedTargets && job.pickedTargets.length === job.spec.service_and_images.length}"
+                    style="color: #606266;"
+                  >
+                    <span
+                      style=" display: inline-block; width: 100%; font-weight: normal; cursor: pointer;"
+                      @click="job.pickedTargets=job.spec.service_and_images;handleRuntimeServiceChange(job, job.pickedTargets)"
+                    >{{$t(`global.selectAll`)}}</span>
+                  </el-option>
                   <el-option
                     v-for="(service,index) of job.spec.service_and_images"
                     :key="index"
-                    :label="service.service_name"
+                    :label="`${service.service_module}(${service.service_name})`"
                     :value="service"
                   >
                     <span>{{service.service_module}}</span>
@@ -119,26 +139,9 @@
                   </el-option>
                 </el-select>
               </el-form-item>
-              <div v-for="(item,index) in job.pickedTargets" :key="index">
-                <el-form-item :label="`${item.service_name}`">
-                  <el-select
-                    v-model="item.image"
-                    filterable
-                    clearable
-                    reserve-keyword
-                    value-key="value"
-                    size="small"
-                    style="width: 220px;"
-                    placeholder="请选择镜像"
-                  >
-                    <el-option
-                      v-for="(image,index) of item.images"
-                      :key="index"
-                      :value="image.host+'/'+image.owner+'/'+image.name+':'+image.tag"
-                      :label="image.tag"
-                    ></el-option>
-                  </el-select>
-                </el-form-item>
+              部署内容
+              <div>
+                <CustomWorkflowDeployConfig :job="job" ref="deployConfig" :fromJobInfo="deployFromJobInfo" :originServices="originServices" :projectName="projectName"  @deployFromOtherJobInfo="getComputedDeployFromOtherJobInfo" @serviceVariableChange="recordServiceVariable" />
               </div>
             </div>
             <div v-if="job.type === 'custom-deploy'">
@@ -150,7 +153,7 @@
                   clearable
                   reserve-keyword
                   value-key="target"
-                  size="medium"
+                  size="small"
                   style="width: 220px;"
                   @change="handleContainerChange($event,job)"
                 >
@@ -165,7 +168,7 @@
                     clearable
                     @change="handleCurImageChange"
                     reserve-keyword
-                    size="medium"
+                    size="small"
                     style="width: 220px;"
                     placeholder="请选择镜像"
                   >
@@ -186,8 +189,31 @@
               <CustomWorkflowCommonRows :job="job" type="plugin" />
             </div>
             <div v-if="job.type === 'zadig-test'">
+              <el-form-item :label="$t(`global.serviceModule`)" v-if="job.spec.test_type=== 'service_test'&&job.spec.source==='runtime'">
+                <el-select
+                  v-model="job.pickedTargets"
+                  filterable
+                  multiple
+                  clearable
+                  reserve-keyword
+                  value-key="value"
+                  size="medium"
+                  style="width: 220px;"
+                  @change="handleTestServiceBuildChange($event,job,'zadig-test')"
+                >
+                  <el-option
+                    v-for="(service,index) of job.spec.originServiceAndTest"
+                    :key="index"
+                    :label="`${service.service_module}(${service.service_name})`"
+                    :value="service"
+                  >
+                    <span>{{service.service_module}}</span>
+                    <span style="color: #ccc;">({{service.service_name}})</span>
+                  </el-option>
+                </el-select>
+              </el-form-item>
               <div v-if="job.pickedTargets">
-                <CustomWorkflowBuildRows :pickedTargets="job.pickedTargets" :elSelectWidth="'140px'" type="zadig-test" />
+                <CustomWorkflowTestRows :job="job" :serviceModules="originServiceAndBuilds" :payload="payload" type="zadig-test" />
               </div>
             </div>
             <div v-if="job.type === 'zadig-scanning'">
@@ -205,10 +231,16 @@
                     clearable
                     reserve-keyword
                     value-key="value"
-                    size="medium"
+                    size="small"
                     style="width: 220px;"
-                    @change="handleServiceDeployChange(job.pickedTargets)"
+                    @change="handleServiceDeployChange(job.pickedTargets, job, 'zadig-distribute-image')"
                   >
+                    <el-option disabled label="全选" value="ALL" :class="{selected: job.pickedTargets && job.pickedTargets.length === job.spec.targets.length}" style="color: #606266;">
+                      <span
+                        style=" display: inline-block; width: 100%; font-weight: normal; cursor: pointer;"
+                        @click="job.pickedTargets = job.spec.targets"
+                      >全选</span>
+                    </el-option>
                     <el-option
                       v-for="(service,index) of job.spec.targets"
                       :key="index"
@@ -240,7 +272,7 @@
                       </el-select>
                     </template>
                   </el-table-column>
-                  <el-table-column label="目标镜像版本" width="240">
+                  <el-table-column label="目标镜像版本" width="240" v-if="!job.spec.enable_target_image_tag_rule">
                     <template slot-scope="{row,$index}">
                       <div class="flex">
                         <el-input v-model="row.target_tag" placeholder="请输入目标镜像版本" size="small" class="input"></el-input>
@@ -251,13 +283,14 @@
                 </el-table>
               </div>
               <div v-else>
-                <el-table :data="cloneWorkflow.fromJobInfo.pickedTargets">
+                <el-table :data="cloneWorkflow.fromJobInfo.pickedTargets" v-if="cloneWorkflow.fromJobInfo">
                   <el-table-column :label="$t(`project.services`)">
                     <template slot-scope="scope">{{`${scope.row.service_module}(${scope.row.service_name})`}}</template>
                   </el-table-column>
                   <el-table-column label="原始镜像版本">
                     <span style="color: #909399; font-size: 12px; line-height: 33px;">来自前置构建任务</span>
                   </el-table-column>
+                  <template v-if="!job.spec.enable_target_image_tag_rule">
                   <el-table-column label="修改版本">
                     <template slot-scope="scope">
                       <el-switch v-model="scope.row.update_tag"></el-switch>
@@ -278,8 +311,30 @@
                       </span>
                     </template>
                   </el-table-column>
+                  </template>
                 </el-table>
               </div>
+            </div>
+            <div v-if="job.type==='jira'">
+              <el-form-item label="变更的问题" v-if="job.spec.source==='runtime'">
+                <el-select
+                  v-model="job.pickedTargets"
+                  filterable
+                  multiple
+                  @change="handleIssueChange"
+                  remote
+                  allow-create
+                  :loading="loading"
+                  :remote-method="(query)=>{searchIssues(query,job)}"
+                  placeholder="请选择"
+                  value-key="key"
+                  size="small"
+                  style="width: 220px;"
+                >
+                  <el-option v-for="item in projectIssues" :key="item.key" :label="`${item.key} ${item.name}`" :value="item">{{item.key}}/{{item.name}}</el-option>
+                </el-select>
+              </el-form-item>
+              <div v-else class="font-gray">{{$t(`workflow.noNeedToEnterVariables`)}}</div>
             </div>
           </el-collapse-item>
         </div>
@@ -291,24 +346,32 @@
 <script>
 import CustomWorkflowBuildRows from '@/components/common/customWorkflowBuildRows.vue'
 import CustomWorkflowCommonRows from '@/components/common/customWorkflowCommonRows.vue'
+import VarBranchSelect from '@/components/projects/workflow/common/varBranchSelect.vue'
+import CustomWorkflowDeployConfig from '@/components/common/customWorkflowDeployConfig.vue'
+import CustomWorkflowTestRows from '@/components/common/customWorkflowTestRows.vue'
 import {
   listProductAPI,
   getAllBranchInfoAPI,
   imagesAPI,
   getRegistryWhenBuildAPI,
-  getAssociatedBuildsAPI
+  getAssociatedBuildsAPI,
+  searchIssueAPI,
+  searchJqlIssueAPI,
+  getFilterEnvServicesAPI,
+  getTestEnvServiceListAPI
 } from '@api'
-import { keyBy, orderBy, cloneDeep } from 'lodash'
+import { keyBy, orderBy, cloneDeep, intersectionWith } from 'lodash'
 
 export default {
   data () {
     return {
       registry_id: '',
       currentProjectEnvs: [],
+      productionEnvList: [],
       dockerList: [],
       specificEnv: true,
       startTaskLoading: false,
-      activeName: '00',
+      activeName: ['env'],
       payload: {
         workflow_name: '',
         stages: [
@@ -318,7 +381,14 @@ export default {
           }
         ]
       },
-      originServiceAndBuilds: []
+      originServiceAndBuilds: [],
+      projectIssues: [],
+      loading: false,
+      deployFromJobName: '',
+      deployJobName: '',
+      originServices: [],
+      requestedServices: new Set(),
+      filterEnvServicesRequestCache: {}
     }
   },
   props: {
@@ -340,18 +410,35 @@ export default {
     webhookSelectedRepo: {
       type: Object,
       default: () => ({})
+    },
+    timerEditMode: {
+      type: Boolean,
+      required: false
     }
   },
   components: {
     CustomWorkflowBuildRows,
-    CustomWorkflowCommonRows
+    CustomWorkflowCommonRows,
+    VarBranchSelect,
+    CustomWorkflowDeployConfig,
+    CustomWorkflowTestRows
+  },
+  computed: {
+    deployFromJobInfo () {
+      let res = {}
+      const jobs = []
+      this.payload.stages.forEach(stage => {
+        jobs.push(...stage.jobs)
+      })
+      res = jobs.find(job => this.deployFromJobName === job.name)
+      return res
+    }
   },
   created () {
     this.init()
   },
   methods: {
     init () {
-      this.getEnvList()
       this.getRegistryWhenBuild()
       this.getServiceAndBuildList()
       if (Object.keys(this.cloneWorkflow).length > 0) {
@@ -361,8 +448,12 @@ export default {
               job.spec.service_and_builds &&
               job.spec.service_and_builds.length > 0
             ) {
-              job.pickedTargets = job.spec.service_and_builds
-              job.pickedTargets.forEach(build => {
+              if (!this.timerEditMode && job.type === 'zadig-build') {
+                this.$set(job, 'pickedTargets', [])
+              } else {
+                this.$set(job, 'pickedTargets', job.spec.service_and_builds)
+              }
+              job.spec.service_and_builds.forEach(build => {
                 this.getRepoInfo(build.repos)
                 build.repos.forEach(repo => {
                   if (
@@ -387,10 +478,30 @@ export default {
                 })
               }
             }
+            if (job.type === 'zadig-distribute-image') {
+              if (job.spec.source === 'runtime') {
+                this.$set(job, 'pickedTargets', job.spec.targets)
+              } else {
+                // fix undefined fromJobInfo
+                if (!this.cloneWorkflow.fromJobInfo) {
+                  this.cloneWorkflow.fromJobInfo = cloneDeep(job)
+                }
+                this.cloneWorkflow.fromJobInfo.pickedTargets = job.spec.targets
+              }
+            }
           })
         })
         this.$set(this, 'payload', this.cloneWorkflow)
         this.handleEnv()
+      }
+    },
+    handleSwitchChange (val, stageIndex, jobIndex) {
+      if (val) {
+        this.activeName = this.activeName.filter(item => {
+          return item !== `${stageIndex}${jobIndex}`
+        })
+      } else {
+        this.activeName.push(`${stageIndex}${jobIndex}`)
       }
     },
     handleEnv () {
@@ -401,8 +512,11 @@ export default {
           item.isShow = true
         }
       })
-      this.payload.stages.forEach(stage => {
-        stage.jobs.forEach(job => {
+      this.payload.stages.forEach((stage, stageIndex) => {
+        stage.jobs.forEach((job, jobIndex) => {
+          if (job.run_policy !== 'default_not_run') {
+            this.activeName.push(`${stageIndex}${jobIndex}`)
+          }
           if (job.spec && job.spec.service_and_builds) {
             this.cloneWorkflow.fromJobInfo = cloneDeep(job)
             job.spec.service_and_builds.forEach(service => {
@@ -420,13 +534,27 @@ export default {
                 // }
               })
             })
+            this.handleServiceBuildChange(job.pickedTargets, job, 'zadig-build')
           }
-          if (job.type === 'zadig-deploy' && job.spec.source === 'runtime') {
-            job.pickedTargets = job.spec.service_and_images
-            this.handleServiceDeployChange(job.pickedTargets)
-            setTimeout(() => {
-              job.spec.service_and_images = this.originServiceAndBuilds
-            }, 1000)
+          if (job.type === 'zadig-deploy') {
+            if (job.spec.env.includes('fixed')) {
+              job.spec.envTypes = 'fixed'
+              if (job.spec.env.replaceAll) {
+                job.spec.env = job.spec.env.replaceAll('<+fixed>', '')
+              } else {
+                job.spec.env = job.spec.env.replace(/\<\+fixed\>/g, '')
+              }
+            }
+            if (job.spec.source === 'runtime') {
+              this.$set(job, 'pickedTargets', job.spec.service_and_images)
+              setTimeout(() => {
+                this.getRegistryId(job.spec.env, job.spec.production)
+                this.handleRuntimeServiceChange(job, job.pickedTargets)
+              }, 500)
+            } else {
+              this.deployFromJobName = job.spec.job_name
+              this.deployJobName = job.name
+            }
           }
           if (job.type === 'custom-deploy') {
             job.spec.targets.forEach(item => {
@@ -464,20 +592,66 @@ export default {
             job.isShowPlugin = len.length !== 0
           }
           if (job.type === 'zadig-test') {
-            job.pickedTargets = job.spec.test_modules
-            job.spec.test_modules.forEach(service => {
-              this.getRepoInfo(service.repos)
-              service.key_vals.forEach(item => {
-                if (
-                  item.value.includes('<+fixed>') ||
-                  item.value.includes('{{')
-                ) {
-                  item.isShow = false
-                } else {
-                  item.isShow = true
-                }
-              })
-            })
+            job.pickedTargets = []
+            if (!job.spec.test_type) {
+              if (job.spec.test_modules && job.spec.test_modules.length > 0) {
+                job.pickedTargets = job.spec.test_modules
+                job.spec.test_modules.forEach(service => {
+                  if (service.repos && service.repos.length > 0) {
+                    this.getRepoInfo(service.repos)
+                  }
+                  if (service.key_vals && service.key_vals.length > 0) {
+                    service.key_vals.forEach(item => {
+                      if (
+                        item.value.includes('<+fixed>') ||
+                        item.value.includes('{{')
+                      ) {
+                        item.isShow = false
+                      } else {
+                        item.isShow = true
+                      }
+                    })
+                  }
+                })
+              }
+            } else {
+              if (
+                job.spec.target_services &&
+                job.spec.target_services.length > 0
+              ) {
+                job.pickedTargets = job.spec.target_services
+                job.spec.target_services.forEach(service => {
+                  service.value = `${service.service_name}/${service.service_module}`
+                })
+              }
+              if (
+                job.spec.service_and_tests &&
+                job.spec.service_and_tests.length > 0
+              ) {
+                job.spec.service_and_tests.forEach(service => {
+                  if (service.repos && service.repos.length > 0) {
+                    this.getRepoInfo(service.repos)
+                  }
+                  service.value = `${service.service_name}/${service.service_module}`
+                  if (service.key_vals && service.key_vals.length > 0) {
+                    service.key_vals.forEach(item => {
+                      if (
+                        item.value.includes('<+fixed>') ||
+                        item.value.includes('{{')
+                      ) {
+                        item.isShow = false
+                      } else {
+                        item.isShow = true
+                      }
+                    })
+                  }
+                })
+              }
+            }
+            job.spec.originServiceAndTest = job.spec.service_and_tests
+            if (job.spec.source === 'runtime') {
+              this.handleTestServiceBuildChange(job.pickedTargets, job)
+            }
           }
           if (job.type === 'zadig-scanning') {
             job.pickedTargets = job.spec.scannings
@@ -495,8 +669,46 @@ export default {
               this.cloneWorkflow.fromJobInfo.pickedTargets = job.spec.targets
             }
           }
+          if (job.type === 'jira') {
+            job.pickedTargets = job.spec.issues
+            this.searchIssues('', job)
+          }
         })
       })
+      this.getEnvList()
+    },
+    searchIssues (keyword = '', job) {
+      this.loading = true
+      const { project_id, query_type, issue_type, jql } = job.spec
+      if (!project_id) return
+      if (query_type === 'advanced') {
+        searchJqlIssueAPI(project_id, jql, keyword).then(res => {
+          this.projectIssues = res.map(item => {
+            return {
+              key: item.key,
+              name: item.fields.summary
+            }
+          })
+          this.loading = false
+        }, () => {
+          this.loading = false
+        })
+      } else {
+        searchIssueAPI(project_id, issue_type, keyword).then(res => {
+          this.projectIssues = res.map(item => {
+            return {
+              key: item.key,
+              name: item.fields.summary
+            }
+          })
+          this.loading = false
+        }, () => {
+          this.loading = false
+        })
+      }
+    },
+    handleIssueChange (val) {
+      this.$forceUpdate()
     },
     getEnvList () {
       const projectName = this.projectName
@@ -506,7 +718,7 @@ export default {
           res,
           ['production', 'name'],
           ['asc', 'asc']
-        )
+        ).filter(re => !re.production)
       })
     },
     getRegistryWhenBuild () {
@@ -516,7 +728,8 @@ export default {
       })
     },
     async getRepoInfo (originRepos) {
-      const reposQuery = originRepos.map(re => {
+      if (!originRepos || originRepos.length === 0) return
+      const reposQuery = originRepos.filter(re => re.source_from !== 'param').map(re => {
         return {
           source: re.source,
           repo_owner: re.repo_owner,
@@ -609,42 +822,158 @@ export default {
         ])
       }
     },
-    getRegistryId (val) {
-      const namespace = val.split('/')[1].trim()
-      const res = this.currentProjectEnvs.find(item => {
-        return item.name === namespace
-      })
-      this.registry_id = res.registry_id
+    getRegistryId (val, type) {
+      if (val) {
+        const envList = type ? this.productionEnvList : this.currentProjectEnvs
+        const res = envList.find(item => {
+          return item.name === val
+        })
+        this.registry_id = res ? res.registry_id : ''
+      }
     },
     getRegistryList (name, id, item) {
       return imagesAPI(name, id).then(res => {
         return res
       })
     },
-    handleServiceDeployChange (val) {
+    handleServiceDeployChange (val, job, type) {
+      if (!this.registry_id) return
       val.forEach(item => {
-        this.getRegistryList([item.service_module], this.registry_id).then(
+        this.getRegistryList([item.image_name], job.spec.source_registry_id).then(
           res => {
             this.$set(item, 'images', res)
           }
         )
       })
+      this.handleServiceBuildChange(val, job, type)
     },
-    handleServiceBuildChange (services, job) {
+    handleServiceBuildChange (services, job, type) {
       this.cloneWorkflow.fromJobInfo = cloneDeep(job)
-      services.forEach(service => {
+      const jobs = []
+      let res = []
+      this.payload.stages.forEach(stage => {
+        jobs.push(...stage.jobs)
+      })
+      res = jobs.filter(item => job.name === item.spec.job_name && item.type === 'zadig-deploy')
+      res.forEach(job => this.getFilterEnvServices(job, services))
+      if (type === 'zadig-build') {
+        if (services && services.length > 0) {
+          services.forEach(service => {
+            if (!this.requestedServices.has(service)) {
+              this.requestedServices.add(service)
+              this.getRepoInfo(service.repos)
+            }
+            service.repos.forEach(repo => {
+              if (
+                repo.codehost_id === this.webhookSelectedRepo.codehost_id &&
+                repo.repo_name === this.webhookSelectedRepo.repo_name &&
+                repo.repo_owner === this.webhookSelectedRepo.repo_owner
+              ) {
+                this.$set(repo, 'showTip', true)
+              }
+            })
+          })
+        }
+      }
+      this.$set(job, 'pickedTargets', services)
+      this.$forceUpdate()
+    },
+    handleTestServiceBuildChange (services, job) {
+      const res = intersectionWith(job.spec.originServiceAndTest, services, (a, b) => `${a.service_module}(${a.service_name})` === `${b.service_module}(${b.service_name})`)
+      res.forEach(service => {
         this.getRepoInfo(service.repos)
-        service.repos.forEach(repo => {
-          if (
-            repo.codehost_id === this.webhookSelectedRepo.codehost_id &&
-            repo.repo_name === this.webhookSelectedRepo.repo_name &&
-            repo.repo_owner === this.webhookSelectedRepo.repo_owner
-          ) {
-            this.$set(repo, 'showTip', true)
-          }
+      })
+      job.spec.service_and_tests = res
+      this.$forceUpdate()
+    },
+    handleRuntimeServiceChange (job, val) {
+      this.getFilterEnvServices(job, val)
+      if (!this.registry_id) return
+      const serviceImages = {}
+      job.spec.services.forEach(service => {
+        (service.service_and_images || []).forEach(svcImg => {
+          serviceImages[svcImg.value] = svcImg.image
         })
       })
+      val.forEach(item => {
+        this.getRegistryList([item.image_name], this.registry_id).then(
+          res => {
+            this.$set(item, 'images', res)
+            if (serviceImages[item.value]) {
+              this.$set(item, 'image', serviceImages[item.value])
+            }
+          }
+        )
+      })
       this.$forceUpdate()
+    },
+    handleDeployChange (job, services) {
+      if (job.spec.source === 'fromjob') {
+        const services = []
+        job.spec.services.forEach(item => {
+          if (item.service_and_images) {
+            services.push(...item.service_and_images)
+          }
+        })
+        this.handleRuntimeServiceChange(job, services)
+      } else {
+        this.handleRuntimeServiceChange(job, services)
+      }
+      this.getRegistryId(job.spec.env, job.spec.production)
+      this.getServiceList(job)
+    },
+    getFilterEnvServices (job, services) {
+      if (!job || !services || services.length === 0) return
+      let service_names = []
+      if (job.spec.source === 'fromjob') {
+        service_names = services.map(item => item.service_name)
+      } else {
+        if (job.pickedTargets) {
+          service_names = job.pickedTargets.length > 0 ? job.pickedTargets.map(item => item.service_name) : []
+        }
+      }
+      if (job.spec.env && job.spec.env.includes('fixed')) {
+        job.spec.envTypes = 'fixed'
+        if (job.spec.env.replaceAll) {
+          job.spec.env = job.spec.env.replaceAll('<+fixed>', '')
+        } else {
+          job.spec.env = job.spec.env.replace(/\<\+fixed\>/g, '')
+        }
+      }
+      const payload = {
+        workflow_name: this.workflowName,
+        job_name: job.name,
+        env_name: job.spec.env,
+        service_names: Array.from(new Set(service_names))
+      }
+      getFilterEnvServicesAPI(this.projectName, payload).then(res => {
+        // 使用用户修改的变量覆盖最新值
+        res = res.map(item => {
+          if (this.filterEnvServicesRequestCache[item.service_name]) {
+            item.key_vals = this.filterEnvServicesRequestCache[item.service_name].key_vals
+            item.latest_key_vals = this.filterEnvServicesRequestCache[item.service_name].latest_key_vals
+            item.latest_variable_kvs = this.filterEnvServicesRequestCache[item.service_name].latest_variable_kvs
+            item.update_config = this.filterEnvServicesRequestCache[item.service_name].update_config
+            item.variable_configs = this.filterEnvServicesRequestCache[item.service_name].variable_configs
+            item.variable_kvs = this.filterEnvServicesRequestCache[item.service_name].variable_kvs
+            item.variable_yaml = this.filterEnvServicesRequestCache[item.service_name].variable_yaml
+          }
+          return item
+        })
+        job.spec.services = res
+        if (job.spec.source === 'fromjob') {
+          this.$set(job, 'originPickedTargets', job.spec.services)
+        } else {
+          this.$set(job.spec, 'originServices', job.spec.services)
+        }
+        this.$nextTick(() => {
+          this.$refs.deployConfig[0].handleServices(services, job)
+        })
+        this.$forceUpdate()
+      })
+    },
+    recordServiceVariable (service) {
+      this.$set(this.filterEnvServicesRequestCache, service.service_name, service)
     },
     getServiceAndBuildList () {
       const projectName = this.projectName
@@ -656,8 +985,9 @@ export default {
       })
     },
     handleContainerChange (val, job) {
+      if (!val || val.length === 0) return
       val.forEach(item => {
-        this.getRegistryList([item.service], job.spec.docker_registry_id).then(
+        this.getRegistryList([item.image_name || item.service], job.spec.docker_registry_id).then(
           res => {
             this.$set(item, 'images', res)
             this.$forceUpdate()
@@ -680,6 +1010,22 @@ export default {
       if (!row.target_tag) {
         this.$set(row, 'target_tag', row.source_tag)
       }
+    },
+    getComputedDeployFromOtherJobInfo (val) {
+      this.$store.dispatch('setDeployFromOtherJobInfo', val)
+    },
+    getServiceList (job) {
+      if (job.spec.env_name) {
+        this.getTestEnvServiceList(job)
+      }
+    },
+    getTestEnvServiceList (job) {
+      // 获取测试环境服务
+      const projectName = this.projectName
+      const envName = job.spec.env_name
+      getTestEnvServiceListAPI(envName, projectName).then(res => {
+        this.$set(job.spec, 'serviceOptions', res.services.filter((item) => { return item.deployed }))
+      })
     }
   },
   watch: {
@@ -749,19 +1095,21 @@ export default {
       if (val) {
         this.init()
       }
-    }
-  },
-  computed: {
-    isShowParams () {
-      // if (this.payload.params) {
-      //   const len = this.payload.params.filter(item => item.isShow)
-      //   return len.length === 0
-      //     ? false
-      //     : len.length !== this.payload.params.length
-      // } else {
-      //   return false
-      // }
-      return true
+    },
+    'deployFromJobInfo.pickedTargets': {
+      handler (newVal) {
+        const job = {
+          name: this.deployJobName,
+          type: 'deploy',
+          spec: {
+            source: 'fromjob'
+          },
+          pickedTargets: newVal
+        }
+        this.getFilterEnvServices(job)
+      },
+      immediate: true,
+      deep: true
     }
   }
 }
@@ -774,6 +1122,27 @@ export default {
 
     .input {
       width: 160px;
+    }
+  }
+
+  /deep/.el-collapse {
+    border-bottom: none;
+
+    .el-collapse-item__header {
+      padding: 0 8px;
+      background: @globalBackgroundColor;
+    }
+
+    .el-collapse-item__wrap {
+      padding: 8px 0;
+    }
+
+    .el-collapse-item:last-child {
+      margin-bottom: 0;
+
+      .el-collapse-item__content {
+        padding: 8px;
+      }
     }
   }
 }

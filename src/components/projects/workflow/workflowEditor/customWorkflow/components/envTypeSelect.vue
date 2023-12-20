@@ -4,17 +4,22 @@
       <i class="iconfont iconshuru" v-if="!type || type === 'runtime'"></i>
       <i class="iconfont icongudingzhi" v-if="type === 'fixed'"></i>
       <i class="iconfont iconhanshu" v-if="type === 'other'"></i>
+      <i class="iconfont iconhanshu" v-if="type === 'param'"></i>
     </span>
     <el-dropdown-menu slot="dropdown">
-      <el-dropdown-item command="runtime" v-if="isRuntime">
+      <el-dropdown-item command="runtime" v-if="isRuntime" :class="{'active': type === 'runtime'||type === ''}">
         <span class="iconfont iconshuru"></span>
         {{$t(`workflow.runtimeInput`)}}
       </el-dropdown-item>
-      <el-dropdown-item command="fixed" v-if="isFixed">
+      <el-dropdown-item command="fixed" v-if="isFixed" :class="{'active': type === 'fixed'}">
         <span class="iconfont icongudingzhi"></span>
         {{$t(`workflow.fixedvalue`)}}
       </el-dropdown-item>
-      <el-dropdown-item command="other" v-if="isOther">
+      <el-dropdown-item command="other" v-if="isOther" :class="{'active': type === 'other'}">
+        <span class="iconfont iconhanshu"></span>
+        {{$t(`workflow.globalVariableOrotherTaskOutput`)}}
+      </el-dropdown-item>
+      <el-dropdown-item command="param" v-if="isParam" :class="{'active': type === 'param'}">
         <span class="iconfont iconhanshu"></span>
         {{$t(`workflow.globalVariableOrotherTaskOutput`)}}
       </el-dropdown-item>
@@ -23,7 +28,6 @@
 </template>
 <script>
 export default {
-  components: {},
   model: {
     prop: 'value',
     event: 'change'
@@ -42,6 +46,10 @@ export default {
       default: false
     },
     isOther: {
+      type: Boolean,
+      default: false
+    },
+    isParam: {
       type: Boolean,
       default: false
     },
@@ -73,11 +81,17 @@ export default {
 </script>
 <style lang="less" scoped>
 .dropdown {
-  color: #06f;
+  color: @themeColor;
   cursor: pointer;
 
   .iconfont {
     cursor: pointer;
+  }
+}
+
+/deep/ .el-dropdown-menu__item {
+  &.active {
+    background: @sidebarActiveColor;
   }
 }
 </style>

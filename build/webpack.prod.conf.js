@@ -120,9 +120,13 @@ const webpackConfig = merge(baseWebpackConfig, {
       manifest: require('../static/vendor-manifest.json')
     }),
     new IncludeAssetsPlugin({
-
-      assets: [`${config.build.assetsSubDirectory}/js/vendor.dll.js`],
-
+      assets: [{
+        path: `${config.build.assetsSubDirectory}/js`,
+        glob:'*.js',
+        globPath: `${config.build.assetsSubDirectory}/js`,
+        hash: true,
+        type:'js'
+      }],
       append: false
 
     }),

@@ -96,11 +96,11 @@
                     clearable
                     size="small"
                     placeholder="组织名/用户名"
-                    :loading="codeInfo[targetIndex][repoIndex].loading.owner"
+                    :loading="codeInfo.length > 0 ? codeInfo[targetIndex][repoIndex].loading.owner : true"
                     filterable
                   >
                     <el-option
-                      v-for="(repo_owner,index) in codeInfo[targetIndex][repoIndex] ? codeInfo[targetIndex][repoIndex]['repo_owners'] : []"
+                      v-for="(repo_owner,index) in (codeInfo.length > 0 && codeInfo[targetIndex][repoIndex]) ? codeInfo[targetIndex][repoIndex]['repo_owners'] : []"
                       :key="index"
                       :label="repo_owner.path"
                       :value="repo_owner.path"
@@ -129,11 +129,11 @@
                     clearable
                     size="small"
                     placeholder="请选择代码库"
-                    :loading="codeInfo[targetIndex][repoIndex].loading.repo"
+                    :loading="codeInfo.length > 0 ? codeInfo[targetIndex][repoIndex].loading.repo : true"
                     filterable
                   >
                     <el-option
-                      v-for="(repo,index) in codeInfo[targetIndex][repoIndex] ? codeInfo[targetIndex][repoIndex]['repos'] : []"
+                      v-for="(repo,index) in (codeInfo.length > 0 && codeInfo[targetIndex][repoIndex]) ? codeInfo[targetIndex][repoIndex]['repos'] : []"
                       :key="index"
                       :label="repo.name"
                       :value="repo.name"
@@ -159,11 +159,11 @@
                     :remote-method="(query)=>{searchBranch(targetIndex,repoIndex,query,repo)}"
                     @clear="searchBranch(targetIndex,repoIndex,'',repo)"
                     allow-create
-                    :loading="codeInfo[targetIndex][repoIndex].loading.branch"
+                    :loading="codeInfo.length > 0 ? codeInfo[targetIndex][repoIndex].loading.branch : true"
                     clearable
                   >
                     <el-option
-                      v-for="(branch,branch_index) in codeInfo[targetIndex][repoIndex] ? codeInfo[targetIndex][repoIndex]['branches'] : []"
+                      v-for="(branch,branch_index) in (codeInfo.length > 0 && codeInfo[targetIndex][repoIndex]) ? codeInfo[targetIndex][repoIndex]['branches'] : []"
                       :key="branch_index"
                       :label="branch.name"
                       :value="branch.name"
@@ -254,6 +254,21 @@
                   <el-switch v-model="repo.submodules"></el-switch>
                 </el-form-item>
               </el-col>
+              <el-col :span="4">
+                <el-form-item>
+                  <template slot="label">
+                    <span>执行时显示</span>
+                    <el-tooltip placement="top" content="关闭后，执行工作流时不显示该代码库选项">
+                      <i style="cursor: pointer;" class="el-icon-warning"></i>
+                    </el-tooltip>
+                  </template>
+                  <i class="iconfont icon"
+                    :class="{'iconview-off1': repo.hidden, iconview: !repo.hidden}"
+                    :style="{ color: repo.hidden ? '#99a9bf': '#0066ff' }"
+                    @click="repo.hidden = !repo.hidden"
+                  ></i>
+                </el-form-item>
+              </el-col>
             </el-row>
           </div>
         </el-form>
@@ -312,10 +327,7 @@ export default {
   data () {
     return {
       allCodeHosts: [],
-      codeInfo: [
-        [{ repo_owners: '', loading: '', branch: '' }],
-        [{ repo_owners: '', loading: '', branch: '' }]
-      ],
+      codeInfo: [],
       showAdvancedSetting: {},
       validateName: 'repoSelect',
       parseErr: '',
@@ -459,7 +471,8 @@ export default {
         branch: '',
         checkout_path: '',
         remote_name: 'origin',
-        submodules: false
+        submodules: false,
+        hidden: false
       }
       this.showTrigger && (repoMeta.enableTrigger = false)
       this.validateForm(targetIndex)
@@ -469,7 +482,7 @@ export default {
             repo_owners: [],
             repos: [],
             branches: [],
-            loading: this.$utils.cloneObj(this.loading)
+            loading: cloneDeep(this.loading)
           })
           if (this.allCodeHosts && this.allCodeHosts.length === 1) {
             const codeHostId = this.allCodeHosts[0].id
@@ -497,7 +510,8 @@ export default {
         branch: '',
         checkout_path: '',
         remote_name: 'origin',
-        submodules: false
+        submodules: false,
+        hidden: false
       }
       this.showTrigger && (repoMeta.enableTrigger = false)
       this.$set(this.codeInfo, targetIndex, {})
@@ -505,7 +519,7 @@ export default {
         repo_owners: [],
         repos: [],
         branches: [],
-        loading: this.$utils.cloneObj(this.loading)
+        loading: cloneDeep(this.loading)
       })
       // if (this.allCodeHosts && this.allCodeHosts.length === 1) {
       //   const codeHostId = this.allCodeHosts[0].id
@@ -686,7 +700,7 @@ export default {
             repo_owners: [],
             repos: [],
             branches: [],
-            loading: this.$utils.cloneObj(this.loading)
+            loading: cloneDeep(this.loading)
           })
           if (codehostId) {
             if (this.codeInfoRepoOwnerCache[codehostId] && this.codeInfoRepoOwnerCache[codehostId].repoOwners.length > 0) {
@@ -879,6 +893,11 @@ export default {
       font-weight: @labelWeight;
       font-size: 14px;
       line-height: 22px;
+    }
+
+    .icon {
+      font-size: 18px;
+      cursor: pointer;
     }
   }
 

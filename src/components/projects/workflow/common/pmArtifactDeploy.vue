@@ -11,6 +11,18 @@
         size="medium"
         class="full-width"
       >
+        <el-option
+          disabled
+          :label="$t(`global.selectAll`)"
+          value="ALL"
+          :class="{selected: pickedTargetServices && pickedTargetServices.length === allServices.length}"
+          style="color: #606266;"
+        >
+          <span
+            style=" display: inline-block; width: 100%; font-weight: normal; cursor: pointer;"
+            @click="pickedTargetServices=allServices;getArtifactFile(pickedTargetServices)"
+          >{{$t(`global.selectAll`)}}</span>
+        </el-option>
         <el-option v-for="(ser,index) of allServices" :key="index" :label="ser.name" :value="ser">
           <span>
             <span>{{ser.name}}</span>

@@ -54,6 +54,7 @@ export function colorTranslate (word, category, subitem = '') {
     const colorComparisonTable = {
       pipeline: {
         task: {
+          waitforapprove: 'color-created',
           created: 'color-created',
           waiting: 'color-created',
           running: 'color-running',

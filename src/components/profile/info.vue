@@ -107,9 +107,9 @@
                     <el-button class="edit-password" @click="modifiedMail" type="text">{{$t(`profile.clickToChange`)}}</el-button>
                   </td>
                 </tr>
-                <tr v-if="currentEditUserInfo.identity_type ==='system'">
+                <tr>
                   <td>
-                    <span>{{$t(`profile.updatePhone`)}}</span>
+                    <span>{{$t(`profile.changePhone`)}}</span>
                   </td>
                   <td>
                     <span>{{currentEditUserInfo.phone}}</span>
@@ -348,8 +348,15 @@ export default {
     },
     pwdRules () {
       const validateNewPass = (rule, value, callback) => {
+        const reg = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
         if (value === '') {
           callback(new Error(this.$t(`profile.inputNewPass`)))
+        } else if (!reg.test(value)) {
+          callback(
+            new Error(
+              this.$t('global.passwordStrengthTip')
+            )
+          )
         } else {
           if (this.pwd.confirmPassword !== '') {
             this.$refs.passwordForm.validateField('confirmPassword')
@@ -358,8 +365,15 @@ export default {
         }
       }
       const validateConfirmPass = (rule, value, callback) => {
+        const reg = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
         if (value === '') {
           callback(new Error(this.$t(`profile.inputNewPassAgain`)))
+        } else if (!reg.test(value)) {
+          callback(
+            new Error(
+              this.$t('global.passwordStrengthTip')
+            )
+          )
         } else if (value !== this.pwd.newPassword) {
           callback(new Error(this.$t(`profile.passwordDontMatch`)))
         } else {

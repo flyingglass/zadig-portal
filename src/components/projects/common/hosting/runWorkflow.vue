@@ -33,17 +33,17 @@
         </template>
       </el-table-column>
     </el-table>
-        <el-dialog :visible.sync="taskDialogVisible"
-               :title="$t(`workflow.runProductWorkflow`)"
-               custom-class="run-workflow"
-               width="60%"
-               class="dialog">
-      <RunWorkflow v-if="taskDialogVisible"
-                    :workflowName="workflow.name"
-                    :displayName="workflow.display_name"
-                    :workflowMeta="workflow"
-                    :targetProject="workflow.product_tmpl_name"
-                    @success="hideAfterSuccess"/>
+    <el-dialog :visible.sync="taskDialogVisible"
+            :title="$t(`workflow.runProductWorkflow`)"
+            custom-class="run-workflow"
+            width="70%"
+            class="dialog">
+    <RunWorkflow v-if="taskDialogVisible"
+                  :workflowName="workflow.name"
+                  :displayName="workflow.display_name"
+                  :workflowMeta="workflow"
+                  :targetProject="workflow.product_tmpl_name"
+                  @success="hideAfterSuccess"/>
     </el-dialog>
   </div>
 </template>

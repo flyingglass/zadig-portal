@@ -78,7 +78,7 @@ export default {
       const arr = []
       this.notifyType.forEach(item => {
         if (val.indexOf(item.label) > -1) {
-          arr.push(item.desc)
+          arr.push(this.$t(`workflow.notifyType.${item.desc}`))
         }
       })
       return arr.toString()

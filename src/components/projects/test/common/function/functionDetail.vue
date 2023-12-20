@@ -55,6 +55,10 @@
     </section>
 
     <section>
+      <OtherSteps ref="otherStepsRef" :testPostConfig="test.post_test" :validObj="validObj" />
+    </section>
+
+    <section>
       <div style="margin-bottom: 8px;">
         <el-button type="primary" size="small" plain @click="switchAdvancedStatus">
           {{$t(`testing.details.advancedSettings.title`)}}
@@ -85,6 +89,7 @@
 import BuildEnv from '@/components/projects/build/buildEnv.vue'
 import EnvVariable from '@/components/projects/build/envVariable.vue'
 import AdvancedConfig from './container/advancedConfig.vue'
+import OtherSteps from './container/otherSteps.vue'
 import bus from '@utils/eventBus'
 import ValidateSubmit from '@utils/validateAsync'
 import Editor from 'vue2-ace-bind'
@@ -107,7 +112,7 @@ export default {
         desc: '',
         repos: [],
         timeout: 60,
-        cache_enable: true,
+        cache_enable: false,
         cache_dir_type: 'workspace',
         cache_user_dir: '',
         advanced_setting_modified: false,
@@ -130,7 +135,7 @@ export default {
             cpu_limit: 1000,
             memory_limit: 512
           },
-          installs: [{ name: '', version: '' }],
+          installs: [], // { name: '', version: '' }
           envs: []
         },
         outputs: [],
@@ -298,6 +303,11 @@ export default {
             element.disabledKey = true
           })
         }
+        if (this.test.post_test) {
+          this.$refs.otherStepsRef.initStepStatus(this.test.post_test)
+        } else {
+          this.$set(this.test, 'post_test', {})
+        }
         this.configDataLoading = false
       })
     }
@@ -307,7 +317,8 @@ export default {
     Resize,
     BuildEnv,
     EnvVariable,
-    AdvancedConfig
+    AdvancedConfig,
+    OtherSteps
   }
 }
 </script>

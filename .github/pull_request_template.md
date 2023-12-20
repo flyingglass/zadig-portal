@@ -1,14 +1,11 @@
 ### What this PR does / Why we need it:
 
-Issue Number: close #xxx <!-- REMOVE this line if no issue to close -->
-
-Problem Summary:
+copilot:summary
 
 ### What is changed and how it works?
 
-What's Changed:
+copilot:walkthrough
 
-How it Works:
 
 ### Check List <!--REMOVE the items that are not applicable-->
 

@@ -644,7 +644,7 @@ export default {
     }
     listProductAPI(projectName).then(res => {
       // Sort by environment type first, then by name
-      this.currentProjectEnvs = orderBy(res, ['production', 'name'], ['asc', 'asc'])
+      this.currentProjectEnvs = orderBy(res, ['production', 'name'], ['asc', 'asc']).filter(re => !re.production)
       // If the specified environment exists, the data is displayed, and if it does not match, it is manually selected
       if (this.workflowMeta.env_name && this.currentProjectEnvs.find(env => (env.name === this.workflowMeta.env_name))) {
         const envName = this.workflowMeta.env_name

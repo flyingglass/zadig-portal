@@ -72,7 +72,7 @@ const initBuildConfig = {
   desc: '',
   repos: [],
   timeout: 60,
-  cache_enable: true,
+  cache_enable: false,
   cache_dir_type: 'workspace',
   cache_user_dir: '',
   advanced_setting_modified: false,

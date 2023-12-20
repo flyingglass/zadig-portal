@@ -1,9 +1,14 @@
 <template>
   <div class="stage">
     <el-tooltip effect="dark" :content="stageInfo.name" placement="top">
-      <div class="stage-name">{{ $utils.tailCut(stageInfo.name,10) }}</div>
+      <div class="stage-name">{{ $utils.tailCut(stageInfo.name,15) }}</div>
     </el-tooltip>
-    <div v-for="(item,index) in stageInfo.jobs" :key="index" @click="setCurIndex(index,item)" class="job">
+    <div v-for="(item,index) in stageInfo.jobs" :key="index" @click="setCurIndex(index,item)" class="job" :class="{'active':item.active}">
+      <el-tooltip placement="top-start" effect="dark" width="200" trigger="hover" :content="$t(`workflow.jobNotReady`)">
+        <div>
+          <span class="error el-icon-warning" v-if="item.error"></span>
+        </div>
+      </el-tooltip>
       <el-tooltip placement="top-start" effect="dark" width="200" trigger="hover" :content="item.name">
         <span>{{item.name}}</span>
       </el-tooltip>
@@ -17,7 +22,7 @@
       :modal-append-to-body="false"
       direction="rtl"
       class="drawer"
-      size="24%"
+      size="30%"
       id="drawer"
       :style="{'zoom':scal}"
     >
@@ -30,6 +35,8 @@
 <script>
 import JobOperate from './jobOperate.vue'
 import { jobType } from '../config'
+import { mapState } from 'vuex'
+
 export default {
   name: 'Stage',
   components: {
@@ -43,6 +50,10 @@ export default {
     workflowInfo: {
       type: Object,
       default: () => ({})
+    },
+    curStageIndex: {
+      type: Number,
+      default: 0
     },
     curJobIndex: {
       type: Number,
@@ -59,6 +70,10 @@ export default {
     isShowCurJobDrawer: {
       type: Boolean,
       default: false
+    },
+    stageInfo: {
+      type: Object,
+      default: () => ({})
     }
   },
   data () {
@@ -68,6 +83,7 @@ export default {
         'zadig-build': {
           name: 'default',
           type: 'zadig-build',
+          run_policy: '',
           spec: {
             docker_registry_id: '',
             service_and_builds: []
@@ -76,16 +92,22 @@ export default {
         'zadig-deploy': {
           name: 'default',
           type: 'zadig-deploy',
+          run_policy: '',
           spec: {
             env: '',
+            production: false,
+            deploy_contents: ['image'],
+            check_run_status: false,
             source: '',
             job_name: '',
-            service_and_images: []
+            service_and_images: [],
+            services: []
           }
         },
         'custom-deploy': {
           name: 'default',
           type: 'custom-deploy',
+          run_policy: '',
           spec: {
             timeout: '60',
             source: 'runtime',
@@ -95,6 +117,7 @@ export default {
         freestyle: {
           name: 'default',
           type: 'freestyle',
+          run_policy: '',
           isCreate: true, // 保存时删掉
           spec: {
             properties: {
@@ -150,6 +173,7 @@ export default {
         plugin: {
           type: 'plugin',
           name: 'default',
+          run_policy: '',
           isCreate: true,
           description: '',
           properties: {
@@ -166,13 +190,18 @@ export default {
         'zadig-test': {
           name: 'default',
           type: 'zadig-test',
+          run_policy: '',
           spec: {
-            test_modules: []
+            test_type: '',
+            test_modules: [],
+            target_services: [],
+            service_and_tests: []
           }
         },
         'zadig-scanning': {
           name: 'default',
           type: 'zadig-scanning',
+          run_policy: '',
           spec: {
             scannings: []
           }
@@ -180,6 +209,7 @@ export default {
         'zadig-distribute-image': {
           name: 'default',
           type: 'zadig-distribute-image',
+          run_policy: '',
           isCreate: true,
           spec: {
             source: 'runtime',
@@ -188,7 +218,9 @@ export default {
             target_registry_id: '',
             targets: [],
             timeout: 10,
-            cluster_id: ''
+            cluster_id: '',
+            enable_target_image_tag_rule: false,
+            target_image_tag_rule: ''
           }
         }
       },
@@ -197,14 +229,6 @@ export default {
     }
   },
   computed: {
-    stageInfo: {
-      get () {
-        return this.value
-      },
-      set (val) {
-        this.$emit('input', val)
-      }
-    },
     JobIndex: {
       get () {
         return this.curJobIndex
@@ -213,22 +237,19 @@ export default {
         this.$emit('update:curJobIndex', val)
       }
     },
-    isShowFooter () {
-      return this.$store.state.customWorkflow.isShowFooter
-    }
+    ...mapState({
+      isShowFooter: state => state.customWorkflow.isShowFooter,
+      curOperateType: state => state.customWorkflow.curOperateType
+    })
   },
   methods: {
     addJob () {
-      if (this.stageInfo.jobs.length > 0) {
-        if (this.isShowFooter) {
-          this.$message.error(this.$t(`workflow.saveLastJobconfigFirst`))
-        } else {
-          this.isShowJobOperateDialog = true
-        }
+      this.$store.dispatch('setCurOperateType', 'jobAdd')
+      if (this.isShowFooter) {
+        this.$message.error(this.$t(`workflow.saveLastJobconfigFirst`))
       } else {
         this.isShowJobOperateDialog = true
       }
-      this.$store.dispatch('setCurOperateType', 'jobAdd')
     },
     delJob (item, index) {
       this.$confirm(`确定删除任务 [${item.name}]？`, '确认', {
@@ -242,28 +263,85 @@ export default {
       })
     },
     setCurIndex (index) {
-      this.$store.dispatch('setCurOperateType', 'jobChange')
+      this.$store.dispatch('setCurOperateType', 'job')
       this.JobIndex = index
       this.$store.dispatch('setIsShowFooter', true)
       this.$store.dispatch('setIsEditJob', true)
+      // job 变化重新计算样式
+      this.workflowInfo.stages.forEach((stage, i) => {
+        stage.jobs.forEach((job, j) => {
+          if (i === this.curStageIndex) {
+            if (j === index) {
+              job.active = true
+            } else {
+              job.active = false
+            }
+          } else {
+            job.active = false
+          }
+        })
+        this.$forceUpdate()
+      })
     },
     setJob (newVal) {
       if (Object.keys(newVal).length === 0) {
         return
       }
+      this.resetActive()
       if (newVal.type === 'plugin') {
+        this.$set(newVal, 'active', true)
         this.stageInfo.jobs.push(newVal)
       } else {
+        this.$set(this.jobInfos[newVal.type], 'active', true)
         this.stageInfo.jobs.push(this.jobInfos[newVal.type])
       }
       this.JobIndex = this.stageInfo.jobs.length - 1
       this.isShowJobOperateDialog = false
       this.$store.dispatch('setIsShowFooter', true)
+    },
+    resetActive () {
+      this.workflowInfo.stages.forEach((stage, i) => {
+        stage.jobs.forEach((job, j) => {
+          job.active = false
+        })
+      })
     }
   },
   watch: {
     scale (val) {
       this.scal = 1 / val
+    },
+    curStageIndex: {
+      handler (newVal) {
+        // job 变化重新计算样式
+        this.workflowInfo.stages.forEach((stage, i) => {
+          stage.jobs.forEach((job, j) => {
+            if (i === newVal) {
+              if (j === this.curJobIndex) {
+                job.active = true
+              } else {
+                job.active = false
+              }
+              this.$forceUpdate()
+            } else {
+              job.active = false
+            }
+          })
+        })
+      },
+      immediate: true
+    },
+    isShowFooter: {
+      handler (newVal) {
+        if (!newVal) {
+          this.JobIndex = -1
+          this.stageInfo.jobs.forEach((job, i) => {
+            job.active = false
+          })
+          this.$forceUpdate()
+        }
+      },
+      immediate: true
     }
   }
 }
@@ -284,15 +362,11 @@ export default {
       bottom: 0;
       height: calc(~'100% - 102px') !important;
     }
-
-    /deep/.el-drawer__body {
-      padding: 0 24px;
-    }
   }
 
   &-name {
-    margin-right: 16px;
-    margin-left: 16px;
+    margin-right: 12px;
+    margin-left: 12px;
     padding-left: -8px;
     overflow: hidden;
     color: #121212;
@@ -307,14 +381,16 @@ export default {
     position: relative;
     width: 7em;
     margin: 8px auto;
+    padding: 0 8px;
     overflow: hidden;
     color: #555;
     font-size: 14px;
     line-height: 30px;
     white-space: nowrap;
+    text-indent: 7px;
     text-overflow: ellipsis;
     border: 1px solid @borderGray;
-    border-radius: 2px;
+    border-radius: 4px;
     cursor: pointer;
 
     .del {
@@ -327,19 +403,29 @@ export default {
 
     &:hover {
       color: #000;
+      border: 1px solid #06f;
+      box-shadow: 1px 1px 2px 1px rgb(150, 185, 238);
 
       .del {
         display: block;
       }
     }
+
+    .error {
+      position: absolute;
+      top: 8px;
+      left: -7px;
+      color: red;
+    }
   }
 
   .active {
     border: 1px solid #06f;
+    box-shadow: 1px 1px 2px 1px rgb(150, 185, 238);
   }
 
   .add {
-    width: 7em;
+    width: 8em;
     margin-top: 8px;
     font-size: 14px;
     border: 2px dotted @borderGray;

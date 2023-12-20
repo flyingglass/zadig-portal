@@ -89,7 +89,7 @@ export default {
       getTestTrendAPI({
         startDate: startTime,
         endDate: endTime,
-        selectedProjects: selectedProjects
+        projectNames: selectedProjects
       }).then(res => {
         this.option.xAxis[0].data = res.sum
           .map(element => {

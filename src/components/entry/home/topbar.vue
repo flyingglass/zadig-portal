@@ -2,33 +2,6 @@
   <div class="topbar-container">
     <div class="topbar-content">
       <div class="topbar-container-start">
-        <div v-if="showProjectSwitcher" class="project-switcher-container">
-          <el-popover placement="bottom" width="300" trigger="hover" popper-class="project-list-popover" @show="searchProject=''">
-            <div class="project-list-container">
-              <div class="search-container">
-                <el-input :placeholder="$t(`topbarMenu.search`)" v-model.trim="searchProject" size="small" />
-              </div>
-              <div class="list-container">
-                <div
-                  v-for="(item,index) in filteredProjectList"
-                  :key="index"
-                  class="project-item"
-                  :class="{'active':item.name === projectName}"
-                  @click="changeProject(item.name)"
-                >
-                  <div class="project-icon">
-                    <i class="iconfont" :class="projectIconMap[item.deployType]"></i>
-                  </div>
-                  <div class="name">{{item.alias}}</div>
-                </div>
-              </div>
-            </div>
-
-            <span slot="reference" class="icon-switcher">
-              <i class="el-icon-caret-bottom"></i>
-            </span>
-          </el-popover>
-        </div>
         <div class="breadcrumb-container">
           <div class="project-switcher"></div>
           <el-breadcrumb v-if="content.breadcrumb && content.breadcrumb.length > 0" separator=">">
@@ -36,12 +9,31 @@
               <span>{{ item.title }}</span>
               <el-popover
                 placement="bottom"
-                width="180"
+                width="280"
                 trigger="hover"
-                v-if="item.list && item.list.length"
-                popper-class="sub-project-list-popover"
+                v-if="item.isProjectName || (item.list && item.list.length)"
+                popper-class="project-list-popover sub-project-list-popover"
               >
-                <div class="option-list-container">
+                <div v-if="item.isProjectName &&showProjectSwitcher" class="project-list-container">
+                  <div class="search-container">
+                    <el-input :placeholder="$t(`topbarMenu.search`)" v-model.trim="searchProject" size="small" />
+                  </div>
+                  <div class="list-container">
+                    <div
+                      v-for="(item,index) in filteredProjectList"
+                      :key="index"
+                      class="project-item"
+                      :class="{'active':item.name === projectName}"
+                      @click="changeProject(item.name)"
+                    >
+                      <div class="project-icon">
+                        <i class="iconfont" :class="projectIconMap[item.deployType]"></i>
+                      </div>
+                      <div class="name">{{item.alias}}</div>
+                    </div>
+                  </div>
+                </div>
+                <div v-else-if="item.list && item.list.length" class="option-list-container">
                   <div
                     v-for="(proItem, index) in item.list"
                     :key="index"
@@ -49,7 +41,7 @@
                     :class="{'active': proItem.title === item.title }"
                     @click="toggleSubUrl(item, proItem)"
                   >
-                    <span class="left">{{ proItem.title }}</span>
+                    <span class="left">{{ proItem.name||proItem.title }}</span>
                     <i class="el-icon-close" v-if="proItem.deleteOpe" @click.stop="proItem.deleteOpe(proItem.title, proItem.name)"></i>
                   </div>
                 </div>
@@ -131,13 +123,11 @@ import Notification from './common/notification.vue'
 import mixin from '@/mixin/topbarMixin'
 import bus from '@utils/eventBus'
 import { mapState, mapGetters } from 'vuex'
+const pinyin = require('pinyin')
 export default {
   data () {
     return {
-      content: {
-        title: '',
-        breadcrumb: []
-      },
+      busReceivedData: {},
       searchProject: '',
       projectIconMap: {
         k8s: 'iconk8s',
@@ -153,13 +143,28 @@ export default {
       role: state => state.login.role,
       userInfo: state => state.login.userinfo
     }),
+    projectListWithPinyin () {
+      return this.projectList.map(item => {
+        item.pinyin = pinyin(item.alias, {
+          style: pinyin.STYLE_NORMAL
+        }).join('')
+        return item
+      })
+    },
     filteredProjectList () {
-      return this.projectList.filter(item => {
-        return item.name.indexOf(this.searchProject) > -1
+      return this.projectListWithPinyin.filter(item => {
+        return (
+          item.name.indexOf(this.searchProject) > -1 ||
+          item.alias.indexOf(this.searchProject) > -1 ||
+          item.pinyin.indexOf(this.searchProject) > -1
+        )
       })
     },
     showProjectSwitcher () {
-      return this.$route.path.includes('/v1/projects/detail/')
+      return (
+        this.$route.path.includes('/v1/projects/detail/') ||
+        this.$route.path.includes('/v1/projects/create/')
+      )
     },
     userName () {
       // 系统用户
@@ -177,12 +182,35 @@ export default {
     },
     projectName () {
       return this.$route.params.project_name
+    },
+    content () {
+      const busReceivedData = this.busReceivedData
+      if (busReceivedData.breadcrumb) {
+        busReceivedData.breadcrumb.forEach(bc => {
+          if (bc && bc.isProjectName) {
+            bc.name = bc.title
+            bc.title = this.projectAliasByName(bc.name)
+          }
+        })
+        return busReceivedData
+      } else {
+        return {
+          title: '',
+          breadcrumb: []
+        }
+      }
     }
   },
   methods: {
     async logOut () {
-      await this.$store.dispatch('LOGINOUT')
-      this.$router.push('/signin')
+      const result = await this.$store.dispatch('LOGOUT').catch(err => {
+        console.log(err)
+      })
+      if (result.enable_redirect && result.redirect_url) {
+        window.location.href = result.redirect_url
+      } else {
+        this.$router.push('/signin')
+      }
     },
     changeProject (projectName) {
       this.$router.push(`/v1/projects/detail/${projectName}/detail`)
@@ -191,9 +219,6 @@ export default {
       if (command === 'logOut') {
         this.logOut()
       }
-    },
-    changeTitle (params) {
-      this.content = params
     },
     toggleSubUrl (item, proItem) {
       item.title = proItem.title
@@ -204,13 +229,7 @@ export default {
   },
   created () {
     bus.$on('set-topbar-title', params => {
-      params.breadcrumb.forEach(bc => {
-        if (bc && bc.isProjectName) {
-          bc.name = bc.title
-          bc.title = this.projectAliasByName(bc.name)
-        }
-      })
-      this.changeTitle(params)
+      this.busReceivedData = params
     })
   },
   components: {
@@ -378,17 +397,6 @@ export default {
         }
       }
 
-      .project-switcher-container {
-        margin-right: 20px;
-
-        .icon-switcher {
-          i {
-            color: @themeColor;
-            cursor: pointer;
-          }
-        }
-      }
-
       span {
         &.kr-topbar-title {
           display: block;
@@ -508,32 +516,6 @@ export default {
             color: @themeColor;
           }
         }
-      }
-    }
-  }
-}
-
-.sub-project-list-popover {
-  .option-list-container {
-    max-height: 300px;
-    margin: -5px -12px -5px -5px;
-    padding-right: 5px;
-    overflow: auto;
-
-    .product-option {
-      display: flex;
-      align-items: center;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-
-      .left {
-        flex: 1 1 auto;
-      }
-
-      &:hover,
-      &.active {
-        background: rgba(0, 102, 255, 0.07);
       }
     }
   }

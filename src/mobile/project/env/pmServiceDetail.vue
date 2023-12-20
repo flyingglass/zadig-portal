@@ -84,7 +84,7 @@ import {
   Divider,
   Popup
 } from 'vant'
-import { serviceTemplateAPI } from '@api'
+import { getServiceDetailAPI } from '@api'
 import { sortBy } from 'lodash'
 export default {
   components: {
@@ -122,9 +122,6 @@ export default {
     projectName () {
       return this.$route.params.project_name
     },
-    originProjectName () {
-      return this.$route.query.originProjectName
-    },
     serviceName () {
       return this.$route.params.service_name
     },
@@ -137,7 +134,7 @@ export default {
       const projectName = this.projectName
       const serviceName = this.serviceName
       const envName = this.envName
-      serviceTemplateAPI(serviceName, 'pm', projectName).then(res => {
+      getServiceDetailAPI(serviceName, 'pm', projectName).then(res => {
         this.currentService = res
         if (res.env_statuses) {
           this.envStatus = sortBy(

@@ -145,37 +145,6 @@ export default {
           ]
         },
         {
-          category_name: 'infraIntegration',
-          items: [
-            {
-              name: 'dockerRegistry',
-              icon: 'iconfont icondocker',
-              url: 'system/registry'
-            },
-            {
-              name: 'objectStorage',
-              icon: 'iconfont iconduixiangcunchu',
-              url: 'system/storage'
-            },
-            {
-              name: 'helmRepo',
-              icon: 'iconfont iconhelmrepo',
-              url: 'system/helm',
-              features: 'helm'
-            },
-            {
-              name: 'clusters',
-              icon: 'iconfont iconjiqun',
-              url: 'system/cluster'
-            },
-            {
-              name: 'hosts',
-              icon: 'iconfont iconzhuji',
-              url: 'system/host'
-            }
-          ]
-        },
-        {
           category_name: 'system',
           items: [
             {
@@ -207,7 +176,7 @@ export default {
           items: [
             {
               name: 'dashboard',
-              icon: 'iconfont iconyunhangzhuangtai',
+              icon: 'iconfont icondashboard',
               url: 'dashboard'
             },
             {

@@ -5,16 +5,15 @@
       :close-on-click-modal="false"
       append-to-body
       center
-      width="720px"
-      label-position="left"
+      width="760px"
       custom-class="dialog-import-from-template"
       :visible="dialogImportFromYamlVisible"
       @update:visible="$emit('update:dialogImportFromYamlVisible', $event)"
     >
-      <el-form :model="importYaml" @submit.native.prevent label-position="left" ref="importYamlForm">
-        <el-form-item :label="$t(`global.serviceName`)" prop="serviceName" :rules="{ required: true, message: '服务名称不能为空', trigger: ['change','blur'] }">
+      <el-form :model="importYaml" @submit.native.prevent label-position="left" ref="importYamlForm" :rules="serviceRules">
+        <el-form-item :label="$t(`global.serviceName`)" prop="serviceName">
           <el-input
-            style="width: 400px;"
+            style="width: calc(100% - 90px);"
             v-model.trim="importYaml.serviceName"
             size="small"
             :disabled="currentUpdatedServiceName!==''?true:false"
@@ -22,8 +21,8 @@
             clearable
           ></el-input>
         </el-form-item>
-        <el-form-item label="选择模板" prop="id" :rules="{ required: true, message: '请选择模板', trigger: ['change','blur'] }">
-          <el-select style="width: 400px;" size="small" v-model="importYaml.id" placeholder="请选择模板" @change="getKubernetesTemplate">
+        <el-form-item label="选择模板" prop="id">
+          <el-select style="width: calc(100% - 90px);" size="small" v-model="importYaml.id" placeholder="请选择模板" @change="getKubernetesTemplate">
             <el-option disabled value="NEWMODULE">
               <router-link to="/v1/template/k8s-yamls" class="module-link">
                 <i class="el-icon-circle-plus-outline" style="margin-right: 3px;"></i>
@@ -35,13 +34,35 @@
         </el-form-item>
         <el-form-item label="变量配置">
           <div class="variables-container">
-            <VariablesEditor
-              style="width: 100%; height: 100%;"
-              ref="variablesEditor"
-              :value="importYaml.variable_yaml"
-              :options="importTemplateVariablesOptions"
-              @input="onVariablesCodeChange"
-            />
+            <el-table :data="importYaml.service_variable_kvs" style="width: 100%;">
+              <el-table-column :label="$t(`global.key`)">
+                <template slot-scope="scope">
+                  <span>{{ scope.row.key }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column :label="$t(`global.desc`)">
+                <template slot-scope="scope">
+                  <span>{{ scope.row.desc }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column :label="$t(`global.value`)">
+                <template slot-scope="scope">
+                  <el-input v-if="scope.row.type === 'string'" size="mini" v-model="scope.row.value"></el-input>
+                  <el-select v-else-if="scope.row.type === 'enum'" v-model="scope.row.value" class="full-width" size="mini">
+                    <el-option v-for="(item,index) in scope.row.options" :key="index" :label="item" :value="item"></el-option>
+                  </el-select>
+                  <el-switch v-else-if="scope.row.type === 'bool'" v-model="scope.row.value"></el-switch>
+                  <VariableEditor
+                    v-else-if="scope.row.type === 'yaml'"
+                    style="width: 100%; height: 100%;"
+                    :ref="`variablesYamlEditor-${scope.$index}`"
+                    :value.sync="scope.row.value"
+                    :varKey="scope.row.key"
+                    @changeValue="(value) => {scope.row.value = value}"
+                  />
+                </template>
+              </el-table-column>
+            </el-table>
           </div>
         </el-form-item>
         <el-form-item prop="auto_sync">
@@ -78,7 +99,7 @@
           size="small"
           class="start-create"
           @click="loadServiceFromKubernetesTemplate"
-        >{{currentUpdatedServiceName?'更新':$t('global.add')}}</el-button>
+        >{{currentUpdatedServiceName?$t('global.update'):$t('global.add')}}</el-button>
       </div>
     </el-dialog>
   </div>
@@ -93,7 +114,8 @@ import {
   reloadServiceFromKubernetesTemplateAPI,
   getKubernetesTemplatesAPI,
   getKubernetesTemplatePreviewAPI,
-  getKubernetesTemplateDetailAPI
+  getKubernetesTemplateDetailAPI,
+  convertVariableToKvAPI
 } from '@api'
 export default {
   data () {
@@ -104,6 +126,7 @@ export default {
         serviceName: '',
         id: '',
         yamls: [],
+        service_variable_kvs: [],
         variable_yaml: '',
         content: '',
         auto_sync: false
@@ -155,23 +178,58 @@ export default {
     currentUpdatedServiceVariableYaml: {
       type: String,
       required: false
+    },
+    currentUpdatedServiceVariableKvs: {
+      type: Array,
+      required: false
+    }
+  },
+  computed: {
+    serviceRules () {
+      const validateServiceName = (rule, value, callback) => {
+        if (value === '') {
+          callback(new Error(this.$t('services.common.inputServiceName')))
+        } else {
+          if (!/^[a-z0-9-]+$/.test(value)) {
+            callback(new Error(this.$t('services.k8s.checkServiceName')))
+          } else {
+            callback()
+          }
+        }
+      }
+      const rules = {
+        serviceName: [{
+          type: 'string',
+          required: true,
+          validator: validateServiceName,
+          trigger: ['blur', 'change']
+        }],
+        id: [{ required: true, message: '请选择模板', trigger: ['change', 'blur'] }]
+      }
+      return rules
     }
   },
   methods: {
     onVariablesCodeChange (code) {
       this.importYaml.variable_yaml = code
     },
-    getTemplatePreview () {
+    async getTemplatePreview () {
       this.previewYamlFile = !this.previewYamlFile
       if (this.previewYamlFile) {
         this.renderedYaml = ''
-        getKubernetesTemplatePreviewAPI({
+        const convertResult = await this.convertVariable('toYaml', this.importYaml.service_variable_kvs, this.importYaml.variable_yaml)
+        if (convertResult) {
+          this.importYaml.variable_yaml = convertResult.yaml
+          this.importYaml.service_variable_kvs = convertResult.kvs
+        }
+        const renderedResult = await getKubernetesTemplatePreviewAPI({
           template_id: this.importYaml.id,
           variable_yaml: this.importYaml.variable_yaml,
           service_name: this.importYaml.serviceName
-        }, this.projectName).then(res => {
-          this.renderedYaml = res
-        })
+        }, this.projectName)
+        if (renderedResult) {
+          this.renderedYaml = renderedResult
+        }
       }
     },
     async getKubernetesTemplate (id) {
@@ -186,6 +244,7 @@ export default {
         if (res) {
           this.importYaml.content = res.content
           this.importYaml.variable_yaml = res.variable_yaml
+          this.importYaml.service_variable_kvs = res.service_variable_kvs
         }
       }
     },
@@ -194,15 +253,28 @@ export default {
       if (this.currentUpdatedServiceName) {
         this.importYaml.auto_sync = this.currentUpdatedServiceAutoSync
         this.importYaml.variable_yaml = this.currentUpdatedServiceVariableYaml
+        this.importYaml.service_variable_kvs = this.currentUpdatedServiceVariableKvs
       } else {
         this.importYaml.serviceName = ''
         this.importYaml.id = ''
         this.importYaml.auto_sync = false
         this.importYaml.variable_yaml = ''
+        this.importYaml.service_variable_kvs = []
       }
       const res = await getKubernetesTemplatesAPI(this.projectName)
       if (res) {
         this.importYaml.yamls = res.yaml_template
+      }
+    },
+    async convertVariable (operation, originalKvs, originalYaml) {
+      const convertPayload = {
+        action: operation,
+        kvs: originalKvs,
+        yaml: originalYaml
+      }
+      const res = await convertVariableToKvAPI(convertPayload)
+      if (res) {
+        return res
       }
     },
     async loadServiceFromKubernetesTemplate () {
@@ -212,40 +284,39 @@ export default {
       const projectName = this.projectName
       const templateId = this.importYaml.id
       const variableYaml = this.importYaml.variable_yaml
+      const serviceVariableKvs = this.importYaml.service_variable_kvs
       const autoSync = this.importYaml.auto_sync
       const payload = {
         service_name: serviceName,
         project_name: projectName,
         template_id: templateId,
         variable_yaml: variableYaml,
+        service_variable_kvs: serviceVariableKvs,
         auto_sync: autoSync
       }
       const valid = await this.$refs.importYamlForm.validate().catch(err => {
-        return err
+        console.log(err)
       })
       if (valid) {
-        const res = this.currentUpdatedServiceName
-          ? await reloadServiceFromKubernetesTemplateAPI(
-            payload,
-            projectName
-          ).catch(err => {
-            console.log(err)
-          })
-          : await loadServiceFromKubernetesTemplateAPI(
-            payload,
-            projectName
-          ).catch(err => {
-            console.log(err)
-          })
+        const convertResult = await this.convertVariable('toYaml', payload.service_variable_kvs, payload.variable_yaml)
+        if (convertResult) {
+          payload.variable_yaml = convertResult.yaml
+          payload.service_variable_kvs = convertResult.kvs
+        }
+        const fn = this.currentUpdatedServiceName ? reloadServiceFromKubernetesTemplateAPI : loadServiceFromKubernetesTemplateAPI
+        const res = await fn(payload, projectName).catch(err => {
+          console.log(err)
+        })
 
         if (res) {
           this.$refs.importYamlForm.resetFields()
           this.importYaml.variable_yaml = ''
+          this.importYaml.service_variable_kvs = []
           this.previewYamlFile = false
           this.$emit('update:dialogImportFromYamlVisible', false)
           this.$message({
             type: 'success',
-            message: `服务模板 ${payload.service_name} ${
+            message: `服务 ${payload.service_name} ${
               this.currentUpdatedServiceName ? '更新' : '导入'
             }成功`
           })
@@ -276,8 +347,7 @@ export default {
     }
   },
   components: {
-    codemirror,
-    VariablesEditor: codemirror
+    codemirror
   }
 }
 </script>
@@ -296,7 +366,7 @@ export default {
   }
 
   .el-dialog__body {
-    padding: 40px 106px 0;
+    padding: 40px 20px 0;
 
     .preload-container {
       .service-name,
@@ -318,10 +388,13 @@ export default {
     font-size: 12px;
   }
 
-  .variables-container {
-    display: inline-block;
+  .full-width {
     width: 100%;
-    height: 200px;
+  }
+
+  .variables-container {
+    display: block;
+    width: 100%;
 
     .vue-codemirror {
       width: 100%;

@@ -1,12 +1,11 @@
 <template>
   <div class="run-code-scanner-container">
     <el-dialog :title="$t('scanning.titleWithScanName', {name: scannerInfo.name})" :visible="dialogVisible" @close="cancelTask" custom-class="scanner-dialog" width="60%">
-      <el-table :data="scannerInfoDetail.repos" v-loading="loading">
+      <el-table :data="(scannerInfoDetail.repos||[]).filter(scan => !scan.hidden)" v-loading="loading">
         <el-table-column prop="repo_name" :label="$t(`global.repository`)" width="180"></el-table-column>
         <el-table-column>
           <template slot-scope="{ row }" v-if="row.repo_name">
             <el-row>
-              <template v-if="!row.use_default">
                 <el-col :span="7">
                   <el-input v-if="row.source==='other'" v-model="row.branchOrTag.name" :placeholder="$t(`repository.prompt.inputBranchOrTag`)" size="small"></el-input>
                   <el-select
@@ -75,7 +74,6 @@
                     <i class="el-icon-question repo-warning"></i>
                   </el-tooltip>
                 </el-col>
-              </template>
             </el-row>
           </template>
         </el-table-column>

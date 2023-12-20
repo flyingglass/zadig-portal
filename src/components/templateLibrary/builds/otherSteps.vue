@@ -136,7 +136,7 @@
             {{$t(`build.stepFileUpload`)}}
             <el-button type="text" @click="removeObject" icon="el-icon-delete"></el-button>
           </span>
-          <el-form-item :label="$t(`sidebarMenu.objectStorage`)" prop="object_storage_id">
+          <el-form-item :label="$t(`sysSetting.integration.storageTab`)" prop="object_storage_id">
             <el-select size="small" v-model="buildConfig.post_build.object_storage_upload.object_storage_id" :placeholder="$t(`build.prompt.selectObjectStorage`)" @change="$refs.objectStorageRef.clearValidate()">
               <el-option v-for="(item,index) in objectStorageList" :key="index" :label="`${item.endpoint}/${item.bucket}`" :value="item.id"></el-option>
             </el-select>

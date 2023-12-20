@@ -19,7 +19,10 @@ const routes = [
           requiresAuth: true,
           title: i18n.t('sidebarMenu.dataInsight')
         },
-        redirect: '/v1/insight/build',
+        redirect: {
+          path: '/v1/insight/build',
+          query: { projectNames: '' }
+        },
         children: [
           {
             path: 'build',
@@ -49,7 +52,7 @@ const routes = [
       },
       {
         path: 'dashboard',
-        component: () => import('@/components/projects/dashboard.vue'),
+        component: () => import('@/components/dashboard/index.vue'),
         meta: {
           requiresAuth: true,
           title: i18n.t('sidebarMenu.dashboard')
@@ -57,7 +60,7 @@ const routes = [
       },
       {
         path: 'projects',
-        component: () => import(/* webpackChunkName: "Project List" */ '@/components/projects/detail_ope/home.vue'),
+        component: () => import(/* webpackChunkName: "Project List" */ '@/components/projects/detail/home.vue'),
         meta: {
           requiresAuth: true,
           title: i18n.t('subTopbarMenu.projects')
@@ -65,7 +68,7 @@ const routes = [
       },
       {
         path: 'projects/detail/:project_name',
-        component: () => import(/* webpackChunkName: "Project View" */ '@/components/projects/detail_ope/view.vue'),
+        component: () => import(/* webpackChunkName: "Project View" */ '@/components/projects/detail/view.vue'),
         meta: {
           requiresAuth: true,
           title: i18n.t('subTopbarMenu.projects')
@@ -73,7 +76,7 @@ const routes = [
         children: [
           {
             path: 'detail',
-            component: () => import(/* webpackChunkName: "Project Detail" */ '@/components/projects/detail_ope/detail.vue'),
+            component: () => import(/* webpackChunkName: "Project Detail" */ '@/components/projects/detail/detail.vue'),
             meta: {
               requiresAuth: true,
               title: i18n.t('metaTitle.projectDetail')
@@ -89,7 +92,7 @@ const routes = [
           },
           {
             path: 'pipelines/multi/:workflow_name',
-            component: () => import(/* webpackChunkName: "Project Workflow" */ '@/components/projects/workflow/productDetail.vue'),
+            component: () => import(/* webpackChunkName: "Project Workflow" */ '@/components/projects/workflow/productWorkflowDetail.vue'),
             meta: {
               requiresAuth: true,
               title: i18n.t('metaTitle.workflowDetail')
@@ -113,7 +116,7 @@ const routes = [
           },
           {
             path: 'pipelines/multi/:workflow_name/:task_id',
-            component: () => import(/* webpackChunkName: "Project Workflow" */ '@/components/projects/workflow/productTaskDetail.vue'),
+            component: () => import(/* webpackChunkName: "Project Workflow" */ '@/components/projects/workflow/productWorkflowTaskDetail.vue'),
             meta: {
               requiresAuth: true,
               title: i18n.t('metaTitle.taskDetail')
@@ -121,7 +124,7 @@ const routes = [
           },
           {
             path: 'pipelines/custom/:workflow_name/:task_id',
-            component: () => import(/* webpackChunkName: "Project Workflow" */ '@/components/projects/workflow/productCustomTaskDetail.vue'),
+            component: () => import(/* webpackChunkName: "Project Workflow" */ '@/components/projects/workflow/customWorkflowTaskDetail.vue'),
             meta: {
               requiresAuth: true,
               title: i18n.t('metaTitle.taskDetail')
@@ -145,7 +148,7 @@ const routes = [
           },
           {
             path: 'pipelines/custom/:workflow_name',
-            component: () => import(/* webpackChunkName: "Project Workflow" */ '@/components/projects/workflow/productCustomDetail.vue'),
+            component: () => import(/* webpackChunkName: "Project Workflow" */ '@/components/projects/workflow/customWorkflowDetail.vue'),
             meta: {
               requiresAuth: true,
               title: i18n.t('metaTitle.taskList')
@@ -286,7 +289,7 @@ const routes = [
           },
           {
             path: 'envs',
-            component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/inner_env/home.vue'),
+            component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/home.vue'),
             meta: {
               requiresAuth: true,
               title: i18n.t('subTopbarMenu.environments')
@@ -303,7 +306,7 @@ const routes = [
               },
               {
                 path: 'detail',
-                component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/inner_env/envDetail.vue'),
+                component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/envDetail.vue'),
                 meta: {
                   requiresAuth: true,
                   title: i18n.t('subTopbarMenu.environments')
@@ -311,7 +314,7 @@ const routes = [
               },
               {
                 path: ':env_name/log',
-                component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/inner_env/changeLog.vue'),
+                component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/k8s/common/changeLog.vue'),
                 meta: {
                   requiresAuth: true,
                   title: i18n.t('environments.common.envChangeLog')
@@ -319,7 +322,7 @@ const routes = [
               },
               {
                 path: 'externalConfig',
-                component: () => import(/* webpackChunkName: "Project Hosting Env" */ '@/components/projects/env/hostEnv/editExternalConfig.vue'),
+                component: () => import(/* webpackChunkName: "Project Hosting Env" */ '@/components/projects/env/host/editExternalConfig.vue'),
                 meta: {
                   requiresAuth: true,
                   title: '配置托管环境'
@@ -327,7 +330,7 @@ const routes = [
               },
               {
                 path: 'detail/:service_name',
-                component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/inner_env/serviceDetail.vue'),
+                component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/k8s/service/serviceDetail.vue'),
                 meta: {
                   requiresAuth: true,
                   title: i18n.t('metaTitle.serviceDetail')
@@ -335,7 +338,7 @@ const routes = [
               },
               {
                 path: 'detail/:service_name/pm',
-                component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/inner_env/pmServiceDetail.vue'),
+                component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/pm/service/pmServiceDetail.vue'),
                 meta: {
                   requiresAuth: true,
                   title: i18n.t('metaTitle.serviceDetail')
@@ -343,7 +346,7 @@ const routes = [
               },
               {
                 path: 'detail/:service_name/config',
-                component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/inner_env/serviceConfig.vue'),
+                component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/k8s/service/serviceConfig.vue'),
                 meta: {
                   requiresAuth: true,
                   title: i18n.t('metaTitle.serviceConfiguration')
@@ -351,7 +354,7 @@ const routes = [
               },
               {
                 path: 'detail/:env_name/envConfig',
-                component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/env_detail/envConfig/home.vue'),
+                component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/envConfig/home.vue'),
                 meta: {
                   requiresAuth: true,
                   title: i18n.t('metaTitle.serviceConfiguration')
@@ -435,7 +438,7 @@ const routes = [
       },
       {
         path: 'projects/create',
-        component: () => import(/* webpackChunkName: "Project" */ '@/components/projects/detail_ope/create.vue'),
+        component: () => import(/* webpackChunkName: "Project" */ '@/components/projects/detail/create.vue'),
         meta: {
           requiresAuth: true,
           title: i18n.t('metaTitle.createProject')
@@ -547,7 +550,7 @@ const routes = [
       },
       {
         path: 'projects/edit/:project_name',
-        component: () => import(/* webpackChunkName: "Project" */ '@/components/projects/detail_ope/create.vue'),
+        component: () => import(/* webpackChunkName: "Project" */ '@/components/projects/detail/create.vue'),
         meta: {
           requiresAuth: true,
           title: i18n.t('project.createProjectComp.editProjectInfo')
@@ -555,7 +558,7 @@ const routes = [
       },
       {
         path: 'projects/initialize/:project_name',
-        component: () => import(/* webpackChunkName: "Project Init" */ '@/components/projects/detail_ope/initialize.vue'),
+        component: () => import(/* webpackChunkName: "Project Init" */ '@/components/projects/detail/initialize.vue'),
         meta: {
           requiresAuth: true,
           title: i18n.t('metaTitle.projectDetail')
@@ -579,7 +582,7 @@ const routes = [
       },
       {
         path: 'projects/detail/:project_name/envs',
-        component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/inner_env/home.vue'),
+        component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/home.vue'),
         meta: {
           requiresAuth: true,
           title: i18n.t('subTopbarMenu.environments')
@@ -596,7 +599,7 @@ const routes = [
           },
           {
             path: 'detail',
-            component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/inner_env/envDetail.vue'),
+            component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/envDetail.vue'),
             meta: {
               requiresAuth: true,
               title: i18n.t('subTopbarMenu.environments')
@@ -604,7 +607,7 @@ const routes = [
           },
           {
             path: 'externalConfig',
-            component: () => import(/* webpackChunkName: "Project External Env" */ '@/components/projects/env/hostEnv/editExternalConfig.vue'),
+            component: () => import(/* webpackChunkName: "Project External Env" */ '@/components/projects/env/host/editExternalConfig.vue'),
             meta: {
               requiresAuth: true,
               title: '配置托管环境'
@@ -612,7 +615,7 @@ const routes = [
           },
           {
             path: 'detail/:service_name',
-            component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/inner_env/serviceDetail.vue'),
+            component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/k8s/service/serviceDetail.vue'),
             meta: {
               requiresAuth: true,
               title: i18n.t('metaTitle.serviceDetail')
@@ -620,7 +623,7 @@ const routes = [
           },
           {
             path: 'detail/:service_name/pm',
-            component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/inner_env/pmServiceDetail.vue'),
+            component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/pm/service/pmServiceDetail.vue'),
             meta: {
               requiresAuth: true,
               title: i18n.t('metaTitle.serviceDetail')
@@ -628,7 +631,7 @@ const routes = [
           },
           {
             path: 'detail/:service_name/config',
-            component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/inner_env/serviceConfig.vue'),
+            component: () => import(/* webpackChunkName: "Project Env" */ '@/components/projects/env/k8s/service/serviceConfig.vue'),
             meta: {
               requiresAuth: true,
               title: i18n.t('metaTitle.serviceConfiguration')
@@ -795,56 +798,106 @@ const routes = [
         }
       },
       {
-        path: 'registry',
-        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/registry/manage.vue'),
-        meta: {
-          requiresAuth: true,
-          requiresSuperAdmin: true,
-          title: i18n.t('sidebarMenu.dockerRegistry')
-        }
-      },
-      {
-        path: 'storage',
-        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/storage/manage.vue'),
-        meta: {
-          requiresAuth: true,
-          requiresSuperAdmin: true,
-          title: i18n.t('sidebarMenu.objectStorage')
-        }
-      },
-      {
-        path: 'helm',
-        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/helm/manage.vue'),
-        meta: {
-          requiresAuth: true,
-          requiresSuperAdmin: true,
-          title: i18n.t('sidebarMenu.helmRepo')
-        }
-      },
-      {
-        path: 'cluster',
-        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/cluster/manage.vue'),
-        meta: {
-          requiresAuth: true,
-          requiresSuperAdmin: true,
-          title: i18n.t('sidebarMenu.clusters')
-        }
-      },
-      {
-        path: 'host',
-        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/host'),
-        meta: {
-          requiresAuth: true,
-          requiresSuperAdmin: true,
-          title: i18n.t('sidebarMenu.hosts')
-        }
-      },
-      {
         path: 'integration',
         component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/integration/home.vue'),
         meta: {
           requiresAuth: true,
+          requiresSuperAdmin: true,
           title: i18n.t('sidebarMenu.systemIntegration')
+        }
+      },
+      {
+        path: 'integration/account',
+        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/integration/account.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresSuperAdmin: true,
+          title: i18n.t('sysSetting.integration.accountTab')
+        }
+      }, {
+        path: 'integration/project',
+        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/integration/project.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresSuperAdmin: true,
+          title: i18n.t('sysSetting.integration.projectTab')
+        }
+      }, {
+        path: 'integration/git',
+        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/integration/git.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresSuperAdmin: true,
+          title: i18n.t('sysSetting.integration.gitProviderTab')
+        }
+      }, {
+        path: 'integration/ci',
+        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/integration/ci.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresSuperAdmin: true,
+          title: i18n.t('sysSetting.integration.ciTab')
+        }
+      }, {
+        path: 'integration/scanner',
+        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/integration/scanner.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresSuperAdmin: true,
+          title: i18n.t('sysSetting.integration.scannerTab')
+        }
+      },
+      {
+        path: 'integration/registry',
+        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/integration/registry.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresSuperAdmin: true,
+          title: i18n.t('sysSetting.integration.registryTab')
+        }
+      },
+      {
+        path: 'integration/storage',
+        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/integration/storage.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresSuperAdmin: true,
+          title: i18n.t('sysSetting.integration.storageTab')
+        }
+      },
+      {
+        path: 'integration/helmChartRepo',
+        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/integration/helmChartRepo.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresSuperAdmin: true,
+          title: i18n.t('sysSetting.integration.helmChartRepoTab')
+        }
+      },
+      {
+        path: 'integration/cluster',
+        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/integration/cluster.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresSuperAdmin: true,
+          title: i18n.t('sysSetting.integration.clusterTab')
+        }
+      },
+      {
+        path: 'integration/host',
+        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/integration/host.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresSuperAdmin: true,
+          title: i18n.t('sysSetting.integration.hostTab')
+        }
+      }, {
+        path: 'integration/external',
+        component: () => import(/* webpackChunkName: "Setting" */ '@/components/setting/integration/external.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresSuperAdmin: true,
+          title: i18n.t('sysSetting.integration.externalSystemTab')
         }
       },
       {

@@ -13,7 +13,7 @@
         </div>
         <section>
           <div class="primary-title not-first-child">变量</div>
-          <EnvVariable :preEnvs="job.spec.properties" :validObj="validObj" :fromWhere="fromWhere" :envs="globalEnv" @getList="getGlobalEnv" />
+          <EnvVariable :preEnvs="job.spec.properties" :validObj="validObj" :fromWhere="fromWhere" :envs="globalEnv" @getList="getGlobalEnv" showEnvType />
         </section>
       </section>
       <div>

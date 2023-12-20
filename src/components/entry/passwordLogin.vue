@@ -26,7 +26,7 @@
                     ></el-input>
                   </el-form-item>
                 </el-form>
-                <el-button type="submit" @click="login" v-loading="loading" class="btn-md btn-theme login-btn">登录</el-button>
+                <el-button type="submit" @click="login" :loading="loading" class="btn-md btn-theme login-btn">登录</el-button>
               </section>
             </div>
           </div>
@@ -78,13 +78,15 @@ export default {
   },
   methods: {
     login () {
-      this.$refs.loginForm.validate(async () => {
-        this.loading = true
-        const payload = this.loginForm
-        const res = await this.$store.dispatch('LOGIN', payload)
-        this.loading = false
-        if (res) {
-          this.$router.push('/v1/dashboard')
+      this.$refs.loginForm.validate(async valid => {
+        if (valid) {
+          this.loading = true
+          const payload = this.loginForm
+          const res = await this.$store.dispatch('LOGIN', payload)
+          this.loading = false
+          if (res) {
+            this.$router.push('/v1/dashboard')
+          }
         }
       })
     }
@@ -287,11 +289,11 @@ export default {
 }
 
 @media (max-width: 992px) {
-  .login .none-992 {
+  .password-login .none-992 {
     display: none;
   }
 
-  .login .form-section {
+  .password-login .form-section {
     padding: 30px 15px;
   }
 }

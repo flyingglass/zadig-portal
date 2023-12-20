@@ -55,7 +55,21 @@ export default {
   watch: {
     logs: function (new_val, old_val) {
       for (let i = this.index; i < new_val.length; i++) {
-        this.term.write(new_val[i] + '\r')
+        // History log
+        if (new_val[i].endsWith('\n')) {
+          new_val[i] = new_val[i] + '\r'
+        } else {
+          // Realtime log
+          if (new_val[i].endsWith('\n\\r')) {
+            new_val[i] = new_val[i].slice(0, -5) + '\r\n'
+            // carriage-return
+          } else if (new_val[i].endsWith('\\r')) {
+            new_val[i] = new_val[i].slice(0, -3) + '\r\n'
+          } else {
+            new_val[i] = new_val[i] + '\r\n'
+          }
+        }
+        this.term.write(new_val[i])
       }
       this.index = new_val.length
     },
@@ -75,7 +89,7 @@ export default {
       disableStdin: true,
       scrollback: 9999999,
       cursorStyle: null,
-      theme: this.$store.state.theme.xtermTheme
+      theme: this.$store.state.preference.xtermTheme
     })
     const fitAddon = new FitAddon()
     term.loadAddon(fitAddon)

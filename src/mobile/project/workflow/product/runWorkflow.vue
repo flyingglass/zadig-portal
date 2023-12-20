@@ -718,7 +718,7 @@ export default {
         res,
         ['production', 'name'],
         ['asc', 'asc']
-      )
+      ).filter(re => !re.production)
       // If the specified environment exists, the data is displayed, and if it does not match, it is manually selected
       if (
         this.workflowMeta.env_name &&

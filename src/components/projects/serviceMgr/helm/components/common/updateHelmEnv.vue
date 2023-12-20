@@ -25,7 +25,7 @@
   </el-dialog>
 </template>
 <script>
-import ChartValues from '@/components/projects/env/env_detail/common/updateHelmEnvChart.vue'
+import ChartValues from '@/components/projects/env/helm/common/updateHelmEnvChart.vue'
 import { updateHelmEnvAPI, getServiceDeployableEnvsAPI } from '@api'
 
 export default {
@@ -67,7 +67,6 @@ export default {
         }
       ])
       const projectName = this.projectName
-
       updateHelmEnvAPI(projectName, payload).then(res => {
         this.updateHelmEnvDialogVisible = false
         this.$router.push(`/v1/projects/detail/${projectName}/envs`)
@@ -90,7 +89,7 @@ export default {
           envMap[env.env_name] = {
             ...env,
             services: [this.chartInfo.actionServiceName],
-            hasDeployed: env.services.includes(this.chartInfo.actionServiceName)
+            hasDeployed: env.services.filter((item) => { return item.service_name === this.chartInfo.actionServiceName }).length > 0
           }
           return {
             ...env,

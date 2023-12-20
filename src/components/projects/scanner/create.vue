@@ -65,7 +65,6 @@
         </el-form-item>
       </el-form>
 
-      <!-- 仅支持一个代码库 -->
       <div class="section">
         <RepoSelect
           ref="repoSelectRef"
@@ -73,9 +72,27 @@
           :validObj="validObj"
           class="scanner-secondary-form"
           showFirstLine
-          showJustOne
         />
       </div>
+
+      <section class="inner-variable">
+        <div class="primary-title not-first-child">
+          <span>{{$t(`global.var`)}}</span>
+        </div>
+        <div @click="showEnvVar = !showEnvVar" class="item-title inner-title">
+          {{ $t(`scanning.details.innerVar`) }}
+          <i
+            style="margin-left: 10px;"
+            :class="[showEnvVar ? 'el-icon-arrow-up' : 'el-icon-arrow-down']"
+          ></i>
+        </div>
+        <div v-show="showEnvVar" class="inner-variable-content">
+          <div v-for="variable in scanVars" :key="variable.variable" class="var-content">
+            <span class="var-variable">{{ variable.variable }}</span>
+            <span class="var-desc">{{ variable.desc }}</span>
+          </div>
+        </div>
+      </section>
 
       <section v-if="scannerConfig.scanner_type === 'sonarQube'">
         <div class="primary-title not-first-child">
@@ -221,7 +238,8 @@ export default {
         },
         outputs: [],
         advanced_setting_modified: false
-      }
+      },
+      showEnvVar: false
     }
   },
   computed: {
@@ -269,6 +287,18 @@ export default {
           trigger: ['blur', 'change']
         }
       }
+    },
+    scanVars () {
+      return [
+        {
+          variable: '$WORKSPACE',
+          desc: this.$t(`systemVariables.preWorkspace`)
+        },
+        {
+          variable: '$BRANCH',
+          desc: this.$t(`systemVariables.branch`)
+        }
+      ]
     }
   },
   methods: {
@@ -321,7 +351,8 @@ export default {
             remote_name: repo.remote_name,
             submodules: repo.submodules,
             checkout_path: repo.checkout_path,
-            repo_namespace: repo.repo_namespace
+            repo_namespace: repo.repo_namespace,
+            hidden: repo.hidden
           }
         })
         this.saveLoading = true
@@ -461,6 +492,31 @@ export default {
 
   .title {
     color: #c0c4cc;
+  }
+
+  .inner-variable {
+    .item-title.inner-title {
+      margin-top: 6px;
+      color: @themeColor;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .inner-variable-content {
+      margin-top: 8px;
+      color: @primaryColor;
+      font-weight: 300;
+      font-size: 14px;
+      line-height: 22px;
+
+      .var-content {
+        display: flex;
+
+        .var-variable {
+          flex: 0 0 200px;
+        }
+      }
+    }
   }
 
   .create-footer {

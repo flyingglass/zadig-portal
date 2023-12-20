@@ -1,119 +1,122 @@
 <template>
   <div class="integration-home">
-    <div class="tab-container">
-      <el-tabs @tab-click="changeTab" type="card" style="height: 200px;" v-model="currentTab">
-        <el-tab-pane name="account" :label="$t(`sysSetting.integration.accountsTab`)">
-          <keep-alive>
-            <Account v-if="currentTab === 'account'" />
-          </keep-alive>
-        </el-tab-pane>
-        <el-tab-pane name="project" :label="$t(`sysSetting.integration.projectTab`)">
-          <keep-alive>
-            <Project v-if="currentTab === 'project'" />
-          </keep-alive>
-        </el-tab-pane>
-        <el-tab-pane name="code" :label="$t(`sysSetting.integration.gitProvidersTab`)">
-          <keep-alive>
-            <Code v-if="currentTab === 'code'" />
-          </keep-alive>
-        </el-tab-pane>
-        <el-tab-pane name="configs" :label="$t(`sysSetting.integration.configsTab`)" disabled>
-          <span slot="label">
-            <el-tooltip effect="dark" placement="top">
-              <div slot="content">
-                <span>{{ $t('sysSetting.integration.configsDocumentLink') }}</span>
-                <el-link
-                  style="font-size: 13px; vertical-align: baseline;"
-                  type="primary"
-                  href="https://docs.koderover.com/zadig/settings/configsystem/apollo/"
-                  :underline="false"
-                  target="_blank"
-                >{{$t(`global.document`)}}</el-link>
-              </div>
-              <span>{{$t(`sysSetting.integration.configsTab`)}}</span>
-            </el-tooltip>
-          </span>
-        </el-tab-pane>
-        <el-tab-pane name="jenkins" :label="$t(`sysSetting.integration.jenkinsTab`)">
-          <keep-alive>
-            <Jenkins v-if="currentTab === 'jenkins'" />
-          </keep-alive>
-        </el-tab-pane>
-        <el-tab-pane name="sonar" :label="$t(`sysSetting.integration.sonarTab`)">
-          <keep-alive>
-            <Sonar v-if="currentTab === 'sonar'" />
-          </keep-alive>
-        </el-tab-pane>
-        <el-tab-pane name="approval" :label="$t(`sysSetting.integration.approvalSystemTab`)" disabled>
-          <span slot="label">
-            <el-tooltip effect="dark" placement="top">
-              <div slot="content">
-                <span>{{ $t('sysSetting.integration.approvalSystemDocumentLink') }}</span>
-                <el-link
-                  style="font-size: 13px; vertical-align: baseline;"
-                  type="primary"
-                  href="https://docs.koderover.com/zadig/settings/approval/"
-                  :underline="false"
-                  target="_blank"
-                >{{$t(`global.document`)}}</el-link>
-              </div>
-              <span>{{$t(`sysSetting.integration.approvalSystemTab`)}}</span>
-            </el-tooltip>
-          </span>
-        </el-tab-pane>
-        <el-tab-pane name="external" :label="$t(`sysSetting.integration.otherSystemTab`)">
-          <keep-alive>
-            <External v-if="currentTab === 'external'" />
-          </keep-alive>
-        </el-tab-pane>
-      </el-tabs>
+    <div class="integration-list">
+      <div v-for="(item,index) in list" :key="index" :class="{ 'integration-item':true,'disabled':item.disabled }" @click="redirectToDetail(item)">
+        <div class="info">
+          <div class="icon">
+            <i :class="item.icon"></i>
+          </div>
+          <div class="detail">
+            <div class="name">
+              <span>{{item.name}}</span>
+              <el-tag v-if="item.disabled" class="tag" size="mini" effect="plain" type="info">企业功能</el-tag>
+            </div>
+            <div class="desc">
+              {{item.desc}}
+            </div>
+          </div>
+        </div>
+        <div class="configure">
+          <el-button :class="{ 'configure-btn':true,'disabled-btn':item.disabled }" :disabled="item.disabled" plain>{{$t('global.configure')}}</el-button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 <script>
 import bus from '@utils/eventBus'
-import Account from './account.vue'
-import Project from './project.vue'
-import Code from './code.vue'
-import Jenkins from './jenkins.vue'
-import Sonar from './sonar.vue'
-import External from './external.vue'
-
 export default {
   name: 'integration',
-  components: {
-    Account,
-    Project,
-    Code,
-    Jenkins,
-    Sonar,
-    External
-  },
-  data () {
-    return {
-      currentTab: 'account'
+  computed: {
+    list () {
+      return [{
+        icon: 'iconfont icongeren',
+        name: this.$t('sysSetting.integration.accountTab'),
+        desc: this.$t('sysSetting.integration.accountTip'),
+        link: '/v1/system/integration/account'
+      },
+      {
+        icon: 'iconfont iconvery-project',
+        name: this.$t('sysSetting.integration.projectTab'),
+        desc: this.$t('sysSetting.integration.projectTip'),
+        link: '/v1/system/integration/project'
+      }, {
+        icon: 'iconfont iconvery-master',
+        name: this.$t('sysSetting.integration.gitProviderTab'),
+        desc: this.$t('sysSetting.integration.gitProviderTip'),
+        link: '/v1/system/integration/git'
+      },
+      {
+        icon: 'iconfont iconpeizhi',
+        name: this.$t('sysSetting.integration.configTab'),
+        desc: this.$t('sysSetting.integration.configTip'),
+        link: '/v1/system/integration/config',
+        disabled: true
+      },
+      {
+        icon: 'iconfont iconjenkins',
+        name: this.$t('sysSetting.integration.ciTab'),
+        desc: this.$t('sysSetting.integration.ciTip'),
+        link: '/v1/system/integration/ci'
+      },
+      {
+        icon: 'iconfont iconvery-scanner',
+        name: this.$t('sysSetting.integration.scannerTab'),
+        desc: this.$t('sysSetting.integration.scannerTip'),
+        link: '/v1/system/integration/scanner'
+      },
+      {
+        icon: 'iconfont iconapproval',
+        name: this.$t('sysSetting.integration.approvalTab'),
+        desc: this.$t('sysSetting.integration.approvalTip'),
+        link: '/v1/system/integration/approval',
+        disabled: true
+      },
+      {
+        icon: 'iconfont icondocker',
+        name: this.$t('sysSetting.integration.registryTab'),
+        desc: this.$t('sysSetting.integration.registryTip'),
+        link: '/v1/system/integration/registry'
+      },
+      {
+        icon: 'iconfont iconduixiangcunchu',
+        name: this.$t('sysSetting.integration.storageTab'),
+        desc: this.$t('sysSetting.integration.storageTip'),
+        link: '/v1/system/integration/storage'
+      },
+      {
+        icon: 'iconfont iconhelmrepo',
+        name: this.$t('sysSetting.integration.helmChartRepoTab'),
+        desc: this.$t('sysSetting.integration.helmChartRepoTip'),
+        link: '/v1/system/integration/helmChartRepo'
+      },
+      {
+        icon: 'iconfont iconvery-k8s',
+        name: this.$t('sysSetting.integration.clusterTab'),
+        desc: this.$t('sysSetting.integration.clusterTip'),
+        link: '/v1/system/integration/cluster'
+      }, {
+        icon: 'iconfont iconzhuji',
+        name: this.$t('sysSetting.integration.hostTab'),
+        desc: this.$t('sysSetting.integration.hostTip'),
+        link: '/v1/system/integration/host'
+      }, {
+        icon: 'iconfont iconvery-collaboratiom',
+        name: this.$t('sysSetting.integration.externalSystemTab'),
+        desc: this.$t('sysSetting.integration.externalSystemTip'),
+        link: '/v1/system/integration/external'
+      }]
     }
   },
   methods: {
-    showCurrentTab () {
-      const currentTab = this.$route.query.currentTab
-      if (currentTab) {
-        this.currentTab = currentTab
+    redirectToDetail (item) {
+      if (!item.disabled) {
+        this.$router.push(item.link)
       }
-    },
-    changeTab (detail) {
-      this.$router.replace({
-        path: '/v1/system/integration',
-        query: { currentTab: detail.name }
-      })
     }
   },
   mounted () {
-    bus.$emit('set-topbar-title', {
-      title: this.$t(`sidebarMenu.integration`),
-      breadcrumb: []
-    })
-    this.showCurrentTab()
+    bus.$emit('set-topbar-title', { title: '', breadcrumb: [{ title: this.$t(`sidebarMenu.systemIntegration`), url: '' }] })
   }
 }
 </script>
@@ -123,23 +126,99 @@ export default {
   position: relative;
   flex: 1;
   height: 100%;
-  padding: 15px 30px;
+  padding: 30px 30px;
   overflow: auto;
 
-  .sync-container {
-    padding-top: 15px;
-    padding-bottom: 15px;
+  .integration-list {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
 
-    .switch-span {
-      display: inline-block;
-      height: 20px;
-      margin-right: 5px;
-      margin-left: 10px;
-      font-weight: 500;
-      font-size: 14px;
-      line-height: 20px;
-      vertical-align: middle;
-      transition: color 0.5s;
+    .integration-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 20px 30px;
+      background-color: #fff;
+      box-shadow: 0 2px 5px 3px #0000000d;
+      cursor: pointer;
+      transition: transform 0.15s ease-in-out;
+
+      &:hover {
+        transform: translate(5px);
+      }
+
+      .info {
+        display: flex;
+        flex-grow: 1;
+        align-items: center;
+        margin-right: 10px;
+
+        .icon {
+          margin-right: 30px;
+
+          i {
+            color: @themeColor;
+            font-size: 30px;
+          }
+        }
+
+        .detail {
+          .name {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            color: #2f2f2f;
+            font-weight: 500;
+            font-size: 16px;
+
+            .tag {
+              margin-left: 4px;
+            }
+          }
+
+          .desc {
+            color: #969799;
+            font-size: 13px;
+          }
+        }
+      }
+
+      &.disabled {
+        cursor: not-allowed;
+
+        .info {
+          .icon {
+            i {
+              color: gray;
+            }
+          }
+        }
+      }
+
+      .configure {
+        .configure-btn {
+          padding: 10px 40px;
+          color: @themeColor;
+          border: 1px solid @themeColor;
+          transition: all 0.5s;
+
+          &:hover {
+            color: #fff;
+            background-color: @themeColor;
+          }
+        }
+
+        .disabled-btn {
+          color: gray;
+          border: 1px solid gray;
+
+          &:hover {
+            color: gray;
+            background: #fff;
+          }
+        }
+      }
     }
   }
 }

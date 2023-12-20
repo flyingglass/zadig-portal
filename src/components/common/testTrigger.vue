@@ -7,6 +7,21 @@
                :close-on-click-modal="false"
                custom-class="add-trigger-dialog"
                center>
+      <div class="webhook-mode">
+        <el-tooltip effect="dark" placement="top">
+          <div slot="content">
+            {{$t(`global.enterprisefeaturesReferforDetails`)}}
+            <el-link
+              style="font-size: 13px; vertical-align: baseline;"
+              type="primary"
+              :href="`https://docs.koderover.com/zadig/ZadigX%20v1.6.0/project/workflow-trigger/#git-触发器`"
+              :underline="false"
+              target="_blank"
+            >{{$t(`global.document`)}}</el-link>
+          </div>
+          <el-button type="text">手动创建 Webhook</el-button>
+        </el-tooltip>
+      </div>
       <el-form ref="triggerForm"
                :model="webhookSwap"
                label-position="left"
@@ -82,7 +97,13 @@
                       :label="$t(`workflow.triggerEvents`)"
                       prop="events">
           <el-checkbox-group v-model="webhookSwap.events">
-            <el-checkbox v-for="tri in triggerMethods.git" :key="tri.value" :label="tri.value">{{ tri.label }}</el-checkbox>
+            <el-checkbox v-for="tri in triggerMethods.git" :key="tri.value" :label="tri.value">{{ tri.label }}
+              <span v-if="tri.value === 'tag'">
+                <el-tooltip  effect="dark" content="基于任一分支新建的 Tag 均会触发执行" placement="top">
+                  <i class="el-icon-warning" style="color: #666;"></i>
+                </el-tooltip>
+              </span>
+            </el-checkbox>
           </el-checkbox-group>
         </el-form-item>
         <el-form-item :label="$t(`global.autoCancel`)" class="label-icon">
@@ -474,6 +495,17 @@ export default {
       .item-title {
         margin-left: 5px;
         color: #909399;
+      }
+    }
+  }
+
+  .add-trigger-dialog {
+    .el-dialog__body {
+      padding: 0 25px 25px 30px;
+
+      .webhook-mode {
+        display: block;
+        text-align: right;
       }
     }
   }

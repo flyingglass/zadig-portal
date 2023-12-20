@@ -2,7 +2,52 @@
   <div class="task-list-container">
     <el-table :data="taskList"
               stripe
-              style="width: 100%;">
+              style="width: 100%;"
+              row-key="task_id"
+              :expand-row-keys="usedExpandKeys"
+              @row-click="(row) => $router.push(`${baseUrl}/${row.task_id}?status=${row.status}&id=${workflowID}&display_name=${displayName}`)"
+              @expand-change="expandChange($event.task_id)">
+      <el-table-column type="expand" v-if="showJobDetail">
+        <div slot-scope="scope" style="margin-left: 48px;">
+          <el-table :data="scope.row.stages" :show-header="false" empty-text="Empty Jobs" class="spec-stage">
+            <el-table-column prop="name" min-width="80">
+              <template slot-scope="{ row }">
+                <span class="small-size">{{ row.type || row.name }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column min-width="100">
+              <template slot-scope="{ row }">
+                <span :class="['small-size', `status-${$utils.taskElTagType(row.status)}`]">
+                  &nbsp;{{ $t(`workflowTaskStatus.${row.status || 'notRunning'}`) }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column min-width="120">
+              <template slot-scope="{ row }">
+                <el-icon name="time"></el-icon>
+                <span v-if="row.status!=='running'"
+                      style="margin-left: 5px;"
+                      class="small-size">
+                  {{ $utils.timeFormatEn(row.end_time - row.start_time) }}
+                </span>
+                <span v-else
+                      style="margin-left: 5px;"
+                      class="small-size">
+                  {{ $utils.timeFormatEn(Math.floor(Date.now() / 1000) - row.start_time) }}
+                </span>
+              </template>
+            </el-table-column>
+            <!-- for style -->
+            <el-table-column min-width="120"></el-table-column>
+            <el-table-column v-if="showServiceNames" min-width="170"></el-table-column>
+            <el-table-column v-if="showServiceNames && workflowType === 'buildv2'" min-width="280"></el-table-column>
+            <el-table-column v-if="showEnv" min-width="100"></el-table-column>
+            <el-table-column v-if="showTestReport" min-width="90"></el-table-column>
+            <el-table-column v-if="showOperation" width="90"></el-table-column>
+            <!-- for style -->
+          </el-table>
+        </div>
+      </el-table-column>
       <el-table-column prop="task_id"
                        label="ID"
                        min-width="80"
@@ -50,7 +95,7 @@
         </template>
       </el-table-column>
       <el-table-column v-if="showServiceNames"
-                       min-width="180"
+                       min-width="170"
                        :label="$t(`global.serviceName`)">
         <template slot-scope="{ row }">
           <template v-if="row.service_modules && row.service_modules.length > 0">
@@ -105,7 +150,7 @@
       </el-table-column>
       <el-table-column v-if="showTestReport"
                        :label="$t(`workflow.testResults`)"
-                       min-width="100">
+                       min-width="90">
         <template slot-scope="scope">
           <template v-if="scope.row.test_reports">
             <div v-for="(item,testIndex) in scope.row.testSummary"
@@ -147,7 +192,7 @@
                        align="center">
         <template slot-scope="scope">
             <el-button v-hasPermi="{projectName: projectName, action: 'run_workflow',resource:{name:workflowName,type:'workflow'},isBtn:true}"
-                       @click="rerun(scope.row)"
+                       @click.stop="rerun(scope.row)"
                        type="text"
                        icon="el-icon-copy-document"
                        size="mini"
@@ -175,7 +220,25 @@ import moment from 'moment'
 export default {
   data () {
     return {
-      durationSet: {}
+      durationSet: {},
+      usedExpandKeys: []
+    }
+  },
+  computed: {
+    expendKeys () {
+      return this.taskList.filter(task => task.status === 'running' || task.status === 'waitforapprove').map(task => task.task_id)
+    }
+  },
+  watch: {
+    expendKeys: {
+      handler (val) {
+        val.forEach(key => {
+          if (!this.usedExpandKeys.includes(key)) {
+            this.usedExpandKeys.push(key)
+          }
+        })
+      },
+      immediate: true
     }
   },
   methods: {
@@ -211,6 +274,14 @@ export default {
         if (taskDetail) {
           this.$emit('cloneTask', taskDetail)
         }
+      }
+    },
+    expandChange (taskId) {
+      const index = this.usedExpandKeys.findIndex(key => key === taskId)
+      if (index !== -1) {
+        this.usedExpandKeys.splice(index, 1)
+      } else {
+        this.usedExpandKeys.push(taskId)
       }
     }
   },
@@ -286,6 +357,10 @@ export default {
       required: false,
       default: 1,
       type: Number
+    },
+    showJobDetail: {
+      default: false,
+      type: Boolean
     }
   },
   components: {
@@ -305,6 +380,20 @@ export default {
 .task-list-container {
   /deep/.el-table {
     color: @columnColor;
+
+    .el-table__row {
+      cursor: pointer;
+    }
+
+    .spec-stage {
+      .el-table__row {
+        cursor: auto;
+      }
+    }
+
+    .small-size {
+      font-size: 13px;
+    }
 
     // .status-icon {
     //   display: inline-block;

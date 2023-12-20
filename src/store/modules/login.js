@@ -1,5 +1,5 @@
 import * as types from '../mutations'
-import { userLoginAPI, queryUserBindingsAPI } from '@api'
+import { userLoginAPI, userLogoutAPI, queryUserBindingsAPI } from '@api'
 import { Message } from 'element-ui'
 import { parseJwt } from '@/utilities/jwt'
 import store from 'storejs'
@@ -34,23 +34,39 @@ const actions = {
     return Promise.resolve(true)
   },
   async LOGIN (context, args) {
-    const userInfo = await userLoginAPI(args).catch(error => console.log(error))
+    let errorHeaders = null
+    const res = await userLoginAPI(args).catch(error => {
+      if (error.response && error.response.headers) {
+        errorHeaders = error.response.headers
+      }
+      console.log(error)
+    })
+    const userInfo = res && res.data
     if (userInfo) {
       store.set('userInfo', userInfo) // 存储用户信息，包括 Token
       context.dispatch('GETUSERROLE')
       context.dispatch('getPreferenceSetting', { uid: userInfo.uid })
+      return Promise.resolve({ userInfo: userInfo })
+    } else {
+      return Promise.resolve({ errorHeaders: errorHeaders })
     }
-    return Promise.resolve(userInfo)
   },
-  async LOGINOUT (context, args) {
-    store.remove('userInfo')
-    store.remove('role')
-
-    Message({
-      message: '登出成功',
-      type: 'success'
-    })
-    return Promise.resolve(true)
+  async LOGOUT (context, args) {
+    const result = await userLogoutAPI().catch(error => console.log(error))
+    if (result) {
+      store.remove('userInfo')
+      store.remove('role')
+      Message({
+        message: '登出成功',
+        type: 'success'
+      })
+      return Promise.resolve(result)
+    } else {
+      Message({
+        message: '登出失败',
+        type: 'error'
+      })
+    }
   },
   async GETUSERROLE (context) {
     const userInfo = store.get('userInfo')

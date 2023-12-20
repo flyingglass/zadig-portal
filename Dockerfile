@@ -1,4 +1,4 @@
-FROM nginx:1.16.0
+FROM nginx:1.22.1
 
 WORKDIR /zadig-portal
 

@@ -137,12 +137,7 @@ export default {
         Object.keys(this.policy).forEach(key => {
           const current = res
             .find(group => group.resource.toLowerCase() === key)
-            .rules.map(rule => {
-              return {
-                ...rule,
-                icon: this.selectIcon(rule.action)
-              }
-            }).filter(
+            .rules.filter(
               rule => !rule.action.startsWith('create_') &&
               !rule.action.startsWith('delete_')
             )
@@ -150,18 +145,6 @@ export default {
           this.policy[key].sharePermi = current
         })
       }
-    },
-    selectIcon (rule) {
-      const iconEnum = {
-        get_: 'el-icon-view',
-        edit_: 'el-icon-edit-outline',
-        delete_: 'el-icon-delete',
-        run_: 'el-icon-video-play',
-        config_: 'el-icon-setting',
-        manage_: 'el-icon-menu'
-      }
-      const icon = Object.keys(iconEnum).find(key => rule.startsWith(key))
-      return icon ? iconEnum[icon] : ''
     },
     async getWorkflows () {
       const res = await getCustomWorkflowListAPI(this.projectName).catch(err => {

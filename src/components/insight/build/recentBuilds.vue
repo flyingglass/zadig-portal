@@ -5,7 +5,7 @@
         <template slot-scope="scope">
           <router-link
             class="task-link"
-            :to="`/v1/projects/detail/${scope.row.productName}/pipelines/${scope.row.type==='workflow'?'multi':'single'}/${scope.row.pipelineName}/${scope.row.taskId}?status=${scope.row.status}`"
+            :to="`/v1/projects/detail/${scope.row.productName}/pipelines/${scope.row.type==='workflow'?'multi':'custom'}/${scope.row.pipelineName}/${scope.row.taskId}?status=${scope.row.status}&display_name=${scope.row.displayName}`"
           >{{scope.row.pipelineName}}#{{scope.row.taskId}}</router-link>
         </template>
       </el-table-column>

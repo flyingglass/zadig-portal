@@ -3,7 +3,7 @@
     <div class="service-wrap">
       <div class="service-container">
         <multipane class="vertical-panes" layout="vertical">
-          <div class="file-tree-container" :style="{width: '240px', maxWidth: '400px'}">
+          <div class="file-tree-container" :style="{width: '250px', maxWidth: '400px'}">
             <FileTree
               :files="files"
               :fileContentChange="fileContentChange"
@@ -30,8 +30,6 @@
                 <FileAside
                   :fileContent="fileContent"
                   :initVariableYaml="initVariableYaml"
-                  :initVariableKvs="initVariableKvs"
-                  :initServiceVars="initServiceVars"
                   :systemVariables="systemVariables"
                   @updateTemplate="updateTemplate"
                 />
@@ -71,8 +69,6 @@ export default {
       files: [],
       inputVariables: [],
       systemVariables: [],
-      initVariableKvs: [],
-      initServiceVars: [],
       initFileContent: '',
       initVariableYaml: ''
     }
@@ -105,21 +101,10 @@ export default {
           console.log(err)
         })
         if (res) {
-          if (res.variable_kvs && res.service_vars) {
-            res.variable_kvs.forEach(element => {
-              if (res.service_vars.includes(element.key)) {
-                element.show = true
-              } else {
-                element.show = false
-              }
-            })
-          }
           res.status = 'added'
           this.fileContent = res
           this.initFileContent = res.content
           this.initVariableYaml = res.variable_yaml
-          this.initVariableKvs = res.variable_kvs
-          this.initServiceVars = res.service_vars
         }
       }
     },
@@ -141,12 +126,14 @@ export default {
         this.getFiles()
       }
     },
-    updateFile (switchNode) {
-      this.$refs.FileEditor.updateFile().then(() => {
-        if (switchNode) {
+    updateFile (operation) {
+      if (operation === 'switchNode') {
+        this.$refs.FileEditor.updateFile().then(() => {
           this.$refs.FileTree.selectAndSwitchTreeNode()
-        }
-      })
+        })
+      } else {
+        this.$refs.FileEditor.updateFile()
+      }
     }
   },
   computed: {

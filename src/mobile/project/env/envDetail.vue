@@ -170,7 +170,7 @@ import {
 import { translateEnvStatus } from '@utils/wordTranslate'
 import {
   getEnvInfoAPI,
-  productServicesAPI,
+  getEnvServicesAPI,
   getRegistryWhenBuildAPI,
   envRevisionsAPI
 } from '@api'
@@ -271,7 +271,7 @@ export default {
       const perPage = 999
       const page = 1
       const query = envSource === 'helm' ? `serviceName=*,name=` : ''
-      const res = await productServicesAPI(
+      const res = await getEnvServicesAPI(
         projectName,
         envName,
         envSource,

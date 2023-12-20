@@ -1,5 +1,5 @@
 <template>
-  <div class="new-workflow-home">
+  <div class="custom-workflow-home">
     <div class="left">
       <header>
         <div class="name">
@@ -66,7 +66,7 @@
             <span class="icon el-icon-plus" @click="scale('enlarge')"></span>
           </el-tooltip>
         </div>
-        <main class="mg-t16" id="main">
+        <main class="mg-t16" id="main" style="max-height: 20%;">
           <section class="ui" id="ui">
             <span class="ui-text mg-r8">Start</span>
             <div class="line">
@@ -77,7 +77,7 @@
                 <div @click="showStageOperateDialog('edit',item)" class="edit">
                   <i class="el-icon-s-tools"></i>
                 </div>
-                <Stage v-model="payload.stages[index]" :curJobIndex.sync="curJobIndex" :scale="scal" :workflowInfo="payload" />
+                <Stage :stageInfo="payload.stages[index]"  :curJobIndex.sync="curJobIndex" :scale="scal" :workflowInfo="payload" :curStageIndex="curStageIndex" />
                 <div @click="delStage(index,item)" class="del">
                   <i class="el-icon-close"></i>
                 </div>
@@ -95,10 +95,31 @@
         </main>
 
         <MultipaneResizer class="multipane-resizer" v-if="isShowFooter&&activeName === 'ui'"></MultipaneResizer>
-        <footer :style="{minHeight:'70%'}" v-if="isShowFooter">
+        <footer :style="{minHeight:'70%', maxHeight:'90%'}" v-if="isShowFooter">
           <div class="header">
             <span>{{curJobType}}</span>
             <div>
+              <el-tooltip effect="dark" placement="top">
+                <i class="pointer el-icon-warning"></i>
+                <div slot="content">
+                  {{$t(`global.enterprisefeaturesReferforDetails`)}}
+                  <el-link
+                    style="font-size: 13px; vertical-align: baseline;"
+                    type="primary"
+                    :href="`https://docs.koderover.com/project/common-workflow/#任务执行策略配置`"
+                    :underline="false"
+                    target="_blank"
+                  >{{$t(`global.document`)}}</el-link>
+                </div>
+              </el-tooltip>
+              <el-dropdown  class="mg-r16">
+                <span class="el-dropdown-link name" style="color: #ddd;">
+                  默认执行
+                </span>
+                <el-dropdown-menu slot="dropdown">
+                  <el-dropdown-item v-for="item in runTypes" :key="item.value" disabled :command="item.value">{{item.label}}</el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
               <el-button size="mini" type="primary" @click="saveJobConfig">{{$t(`global.confirm`)}}</el-button>
               <el-button size="mini" @click.stop="closeFooter">{{$t(`global.cancel`)}}</el-button>
             </div>
@@ -114,7 +135,7 @@
                 :workflowInfo="payload"
                 :curStageIndex="curStageIndex"
                 :curJobIndex="curJobIndex"
-              />
+              >
               <el-select size="small" v-model="service" multiple filterable clearable>
                 <el-option
                   disabled
@@ -136,12 +157,13 @@
                 >{{service.value}}</el-option>
               </el-select>
               <el-button
-                type="success"
+                type="primary"
                 size="mini"
                 plain
                 :disabled="Object.keys(service).length === 0"
                 @click="addServiceAndBuild(job.spec.service_and_builds)"
               >+ {{$t(`global.add`)}}</el-button>
+              </JobBuild>
             </div>
             <JobPlugin
               v-if="job.type === jobType.plugin"
@@ -176,6 +198,8 @@
               :ref="jobType.k8sDeploy"
               :originServiceAndBuilds="originServiceAndBuilds"
               :workflowInfo="payload"
+              :curStageIndex="curStageIndex"
+              :curJobIndex="curJobIndex"
             />
             <JobTest
               :projectName="projectName"
@@ -192,6 +216,8 @@
               :job="job"
               :ref="jobType.scanning"
               :workflowInfo="payload"
+              :curStageIndex="curStageIndex"
+              :curJobIndex="curJobIndex"
             />
             <JobImageDistribute
               :projectName="projectName"
@@ -199,6 +225,8 @@
               :job="job"
               :ref="jobType.distribute"
               :workflowInfo="payload"
+              :curStageIndex="curStageIndex"
+              :curJobIndex="curJobIndex"
             />
           </div>
         </footer>
@@ -223,7 +251,7 @@
       <span slot="title" class="drawer-title">
         <span>{{drawerTitle}}</span>
         <div v-if="drawerHideButton">
-          <el-button size="mini" plain @click="closeDrawer">{{$t(`global.cancel`)}}</el-button>
+          <el-button size="mini" plain @click="closeDrawer">{{$t(`workflow.close`)}}</el-button>
         </div>
         <div v-else>
           <el-button type="primary" size="mini" plain @click="handleDrawerChange">{{$t(`global.confirm`)}}</el-button>
@@ -251,7 +279,7 @@
         <Notify :config="payload" :isEdit="isEdit" ref="notify" />
       </div>
     </el-drawer>
-    <el-dialog :title="stageOperateType === 'add' ? $t(`workflow.addStage`): $t(`workflow.editStage`)" :visible.sync="isShowStageOperateDialog" width="30%">
+    <el-dialog :title="stageOperateType === 'add' ? $t(`workflow.addStage`): $t(`workflow.editStage`)" :visible.sync="isShowStageOperateDialog" width="700px">
       <StageOperate
         ref="stageOperate"
         :stageInfo="stage"
@@ -275,7 +303,9 @@ import {
   editorOptions,
   jobType,
   jobTypeList,
-  validateWorkflowName
+  validateWorkflowName,
+  runTypes,
+  requireFields
 } from './config'
 import {
   getAssociatedBuildsAPI,
@@ -295,7 +325,6 @@ import JobK8sDeploy from './components/jobs/jobK8sDeploy'
 import JobTest from './components/jobs/jobTest'
 import JobScanning from './components/jobs/jobScanning.vue'
 import JobImageDistribute from './components/jobs/jobImageDistribute.vue'
-import RunCustomWorkflow from '../../common/runCustomWorkflow'
 import Env from './components/base/env.vue'
 import Webhook from './components/base/webhook.vue'
 import Notify from './components/base/notify.vue'
@@ -311,6 +340,8 @@ export default {
   data () {
     return {
       validateWorkflowName,
+      runTypes,
+      requireFields,
       tabList,
       configList,
       activeName: 'ui',
@@ -347,6 +378,7 @@ export default {
         project: '',
         description: '',
         multi_run: false,
+        concurrency_limit: 1,
         notify_ctls: [],
         stages: [],
         params: [],
@@ -364,8 +396,10 @@ export default {
       yamlError: '',
       isShowDrawer: false,
       scal: '1',
-      insertSatgeIndex: 0,
-      notComputedPayload: {}
+      insertStageIndex: 0,
+      notComputedPayload: {},
+      isShowModelDialog: false,
+      modelFormInfo: { name: '' }
     }
   },
   components: {
@@ -381,7 +415,6 @@ export default {
     JobTest,
     JobScanning,
     JobImageDistribute,
-    RunCustomWorkflow,
     codemirror,
     Env,
     Webhook,
@@ -394,9 +427,6 @@ export default {
     },
     projectName () {
       return this.$route.query.projectName
-    },
-    curOperateType () {
-      return this.$store.state.customWorkflow.curOperateType
     },
     isEdit () {
       return !!this.$route.params.workflow_name
@@ -439,9 +469,15 @@ export default {
       })
       return res ? res.drawerHideButton : false
     },
+    policyName () {
+      const curRunPolicy = this.job ? this.job.run_policy : ''
+      const res = this.runTypes.find(item => item.value === curRunPolicy)
+      return res ? res.label : ''
+    },
     ...mapState({
       isEditJob: state => state.customWorkflow.isEditJob,
-      isShowFooter: state => state.customWorkflow.isShowFooter
+      isShowFooter: state => state.customWorkflow.isShowFooter,
+      curOperateType: state => state.customWorkflow.curOperateType
     })
   },
   created () {
@@ -452,7 +488,6 @@ export default {
       this.payload.project = this.projectName
       this.getServiceAndBuildList()
       this.setTitle()
-      // edit
       if (this.isEdit) {
         this.getWorkflowDetail(this.$route.params.workflow_name)
       }
@@ -541,12 +576,21 @@ export default {
         })
       }
       this.payload.stages.forEach(stage => {
-        if (stage.approval.type === 'native') {
-          delete stage.approval.lark_approval
-        } else {
-          delete stage.approval.native_approval
+        if (stage.approval) {
+          if (stage.approval.type === 'native') {
+            delete stage.approval.lark_approval
+          } else {
+            delete stage.approval.native_approval
+          }
         }
         stage.jobs.forEach(job => {
+          if (job.error) {
+            this.$message.error(this.$t(`workflow.jobNotReady`))
+            throw Error()
+          } else {
+            delete job.error
+          }
+          delete job.active
           if (job.type === 'zadig-build') {
             if (job.spec && job.spec.service_and_builds) {
               job.spec.service_and_builds.forEach(service => {
@@ -561,11 +605,10 @@ export default {
             }
           }
           if (job.type === 'zadig-deploy') {
-            if (job.spec.envType === 'fixed') {
+            if (job.spec.envTypes === 'fixed') {
               job.spec.env = '<+fixed>' + job.spec.env
             }
-            job.spec.source =
-              job.spec.serviceType === 'other' ? 'fromjob' : 'runtime'
+            job.spec.source = job.spec.serviceType === 'other' ? 'fromjob' : 'runtime'
           }
           if (job.type === 'freestyle') {
             if (
@@ -598,12 +641,21 @@ export default {
                 }
               })
             }
+            if (job.spec.service_and_tests && job.spec.service_and_tests.length > 0) {
+              job.spec.service_and_tests.forEach(service => {
+                service.key_vals.forEach(item => {
+                  if (item.command === 'fixed') {
+                    item.value = '<+fixed>' + item.value
+                  }
+                })
+              })
+            }
+            job.spec.source = job.spec.source === 'other' ? 'fromjob' : 'runtime'
           }
           if (job.type === 'zadig-distribute-image') {
-            if (job.spec.source === 'other') {
-              job.spec.source = 'fromjob'
-            }
+            job.spec.source = job.spec.source === 'other' ? 'fromjob' : 'runtime'
           }
+          delete job.error
         })
       })
       // display_name 中间支持空格 结尾不支持
@@ -615,9 +667,12 @@ export default {
       if (this.modelId) {
         addCustomWorkflowAPI(yamlParams, this.projectName)
           .then(res => {
-            this.$message.success('模板保存成功')
+            this.$message.success('保存成功')
             this.getWorkflowDetail(this.payload.name)
             if (params && params === 'fromWebhook') {
+              this.$router.push(
+                `/v1/projects/detail/${this.projectName}/pipelines/custom/edit/${this.payload.name}?projectName=${this.projectName}&display_name=${this.payload.display_name}`
+              )
               return
             }
             this.$router.push(
@@ -632,6 +687,7 @@ export default {
           updateCustomWorkflowAPI(workflowName, yamlParams, this.projectName)
             .then(res => {
               this.$message.success('保存成功')
+              this.originalWorkflow = cloneDeep(this.payload)
               if (this.curDrawer !== 'webhook' && !this.isShowDrawer) {
                 this.$router.push(
                   `/v1/projects/detail/${this.projectName}/pipelines/custom/${this.payload.name}?display_name=${this.payload.display_name}`
@@ -647,6 +703,9 @@ export default {
               this.$message.success('新建成功')
               this.getWorkflowDetail(this.payload.name)
               if (params && params === 'fromWebhook') {
+                this.$router.push(
+                  `/v1/projects/detail/${this.projectName}/pipelines/custom/edit/${this.payload.name}?projectName=${this.projectName}&display_name=${this.payload.display_name}`
+                )
                 return
               }
               this.$router.push(
@@ -684,19 +743,29 @@ export default {
         this.payload.params.forEach(item => {
           if (item.value && item.value.includes('<+fixed>')) {
             item.command = 'fixed'
-            item.value = item.value.replaceAll('<+fixed>', '')
+            if (item.value.replaceAll) {
+              item.value = item.value.replaceAll('<+fixed>', '')
+            } else {
+              item.value = item.value.replace(/\<\+fixed\>/g, '')
+            }
           }
         })
       }
       this.payload.stages.forEach(stage => {
         stage.jobs.forEach(job => {
+          job.active = false
+          job.error = false
           if (job.type === 'zadig-build') {
             if (job.spec && job.spec.service_and_builds) {
               job.spec.service_and_builds.forEach(service => {
                 service.key_vals.forEach(item => {
                   if (item.value.includes('<+fixed>')) {
                     item.command = 'fixed'
-                    item.value = item.value.replaceAll('<+fixed>', '')
+                    if (item.value.replaceAll) {
+                      item.value = item.value.replaceAll('<+fixed>', '')
+                    } else {
+                      item.value = item.value.replace(/\<\+fixed\>/g, '')
+                    }
                   }
                   if (item.value.includes('{{')) {
                     item.command = 'other'
@@ -707,18 +776,20 @@ export default {
           }
           if (job.type === 'zadig-deploy') {
             if (job.spec.env.includes('fixed')) {
-              job.spec.envType = 'fixed'
-              job.spec.env = job.spec.env.replaceAll('<+fixed>', '')
+              job.spec.envTypes = 'fixed'
+              if (job.spec.env.replaceAll) {
+                job.spec.env = job.spec.env.replaceAll('<+fixed>', '')
+              } else {
+                job.spec.env = job.spec.env.replace(/\<\+fixed\>/g, '')
+              }
             }
             if (job.spec.env.includes('{{')) {
               job.spec.envType = 'other'
             }
-            if (job.spec.service_and_images.length > 0) {
-              job.spec.serviceType = 'runtime'
+            if (job.spec.env.includes('{{')) {
+              job.spec.envType = 'other'
             }
-            if (job.spec.source === 'fromjob') {
-              job.spec.serviceType = 'other'
-            }
+            job.spec.serviceType = job.spec.source === 'fromjob' ? 'other' : 'runtime'
             // Mapping for value-key
             if (
               job.spec &&
@@ -734,7 +805,11 @@ export default {
             job.spec.properties.envs.forEach(item => {
               if (item.value.includes('<+fixed>')) {
                 item.command = 'fixed'
-                item.value = item.value.replaceAll('<+fixed>', '')
+                if (item.value.replaceAll) {
+                  item.value = item.value.replaceAll('<+fixed>', '')
+                } else {
+                  item.value = item.value.replace(/\<\+fixed\>/g, '')
+                }
               }
               if (item.value.includes('{{')) {
                 item.command = 'other'
@@ -745,7 +820,11 @@ export default {
             job.spec.plugin.inputs.forEach(item => {
               if (item.value && item.value.includes('<+fixed>')) {
                 item.command = 'fixed'
-                item.value = item.value.replaceAll('<+fixed>', '')
+                if (item.value.replaceAll) {
+                  item.value = item.value.replaceAll('<+fixed>', '')
+                } else {
+                  item.value = item.value.replace(/\<\+fixed\>/g, '')
+                }
               }
               if (item.value && item.value.includes('{{')) {
                 item.command = 'other'
@@ -753,18 +832,50 @@ export default {
             })
           }
           if (job.type === 'zadig-test') {
-            if (job.spec && job.spec.test_modules) {
+            if (job.spec.test_modules && job.spec.test_modules.length > 0) {
               job.spec.test_modules.forEach(service => {
                 service.key_vals.forEach(item => {
                   if (item.value.includes('<+fixed>')) {
                     item.command = 'fixed'
-                    item.value = item.value.replaceAll('<+fixed>', '')
+                    if (item.value.replaceAll) {
+                      item.value = item.value.replaceAll('<+fixed>', '')
+                    } else {
+                      item.value = item.value.replace(/\<\+fixed\>/g, '')
+                    }
                   }
                   if (item.value.includes('{{')) {
                     item.command = 'other'
                   }
                 })
               })
+            }
+            if (job.spec.target_services && job.spec.target_services.length > 0) {
+              job.spec.target_services.forEach(service => {
+                service.value = `${service.service_name}/${service.service_module}`
+              })
+            }
+            if (
+              job.spec.service_and_tests &&
+              job.spec.service_and_tests.length > 0
+            ) {
+              job.spec.service_and_tests.forEach(service => {
+                service.key_vals.forEach(item => {
+                  if (item.value.includes('<+fixed>')) {
+                    item.command = 'fixed'
+                    if (item.value.replaceAll) {
+                      item.value = item.value.replaceAll('<+fixed>', '')
+                    } else {
+                      item.value = item.value.replace(/\<\+fixed\>/g, '')
+                    }
+                  }
+                  if (item.value.includes('{{')) {
+                    item.command = 'other'
+                  }
+                })
+              })
+            }
+            if (job.spec.source === 'fromjob') {
+              job.spec.source = 'other'
             }
           }
           if (job.type === 'zadig-distribute-image') {
@@ -779,15 +890,15 @@ export default {
       })
       this.originalWorkflow = cloneDeep(this.payload)
       this.$store.dispatch('setWorkflowInfo', cloneDeep(this.payload))
+      this.checkRequire()
     },
     showStageOperateDialog (type, row) {
-      this.insertSatgeIndex = this.payload.stages.length
+      this.insertStageIndex = this.payload.stages.length
       this.$store.dispatch('setCurOperateType', 'stageAdd')
       if (
-        type === 'add' &&
-        !this.isEdit &&
         this.payload.stages.length !== 0 &&
-        this.stage.jobs.length === 0
+        this.payload.stages.find(stage => stage.jobs.length === 0) &&
+        type === 'add'
       ) {
         this.$message.error(this.$t(`workflow.atLeastOneJob`))
         return
@@ -798,7 +909,7 @@ export default {
         this.isShowStageOperateDialog = true
       }
       this.stageOperateType = type
-      if (row) {
+      if (row) { // when edit
         if (!row.approval) {
           row.approval = {
             enabled: false,
@@ -813,14 +924,14 @@ export default {
     },
     addStage (index) {
       this.showStageOperateDialog('add')
-      this.insertSatgeIndex = index + 1
+      this.insertStageIndex = index + 1
     },
     operateStage () {
       this.$refs.stageOperate.validate().then(valid => {
         if (valid) {
           if (this.stageOperateType === 'add') {
             this.stage = this.$refs.stageOperate.getData()
-            this.payload.stages.splice(this.insertSatgeIndex, 0, this.stage)
+            this.payload.stages.splice(this.insertStageIndex, 0, this.stage)
             this.curStageIndex = this.payload.stages.length - 1
             this.curJobIndex = -1
             this.$store.dispatch('setIsShowFooter', false)
@@ -850,6 +961,12 @@ export default {
       })
     },
     setCurStage (index, item) {
+      if (this.curOperateType === 'jobAdd') {
+        if (!this.isShowFooter) {
+          this.curStageIndex = index
+        }
+        return
+      }
       this.curStageIndex = index
       this.curStageInfo = item
     },
@@ -862,6 +979,9 @@ export default {
           }
         })
       })
+      this.workflowCurJobLength = this.payload.stages[
+        this.curStageIndex
+      ].jobs.length
       this.$refs[this.job.type].validate().then(valid => {
         if (valid) {
           const curJob = this.$refs[this.job.type].getData()
@@ -874,6 +994,7 @@ export default {
             this.curJobIndex,
             curJob
           )
+          this.checkRequire()
           this.$store.dispatch('setIsShowFooter', false)
         }
       })
@@ -918,7 +1039,12 @@ export default {
           this.$set(
             this.payload,
             'share_storages',
-            this.$refs.settings.getData()
+            this.$refs.settings.getData().share_storages
+          )
+          this.$set(
+            this.payload,
+            'concurrency_limit',
+            this.$refs.settings.getData().concurrency_limit
           )
           this.isShowDrawer = false
         })
@@ -937,6 +1063,7 @@ export default {
     setCurDrawer (val) {
       this.isShowDrawer = true
       this.curDrawer = val
+      this.$store.dispatch('setIsShowFooter', false)
     },
     closeDrawer () {
       this.isShowDrawer = false
@@ -952,9 +1079,46 @@ export default {
       }
       this.job = this.payload.stages[this.curStageIndex].jobs[this.curJobIndex]
       this.$store.dispatch('setIsShowFooter', false)
+    },
+    checkRequire () {
+      // 用模版(字段不是必填的)创建的工作流(字段必填)字段必填检查
+      this.payload.stages.forEach(stage => {
+        stage.jobs.forEach(job => {
+          const res = []
+          if (!requireFields[job.type] || requireFields[job.type].length === 0) return
+          requireFields[job.type].forEach(item => {
+            if (item.type === 'String') {
+              if (!job.spec[item.field]) {
+                res.push(true)
+              } else {
+                res.push(false)
+              }
+            } else {
+              if (job.spec[item.field] && job.spec[item.field].length === 0) {
+                res.push(true)
+              } else {
+                res.push(false)
+              }
+            }
+            if (res.includes(true)) {
+              this.$set(job, 'error', true)
+            } else {
+              this.$set(job, 'error', false)
+            }
+          })
+        })
+      })
     }
   },
   watch: {
+    payload: {
+      handler (val) {
+        if (this.activeName === 'yaml') {
+          this.yaml = jsyaml.dump(val)
+        }
+      },
+      deep: true
+    },
     activeName (newVal, oldVal) {
       if (newVal === 'yaml') {
         this.yaml = jsyaml.dump(this.payload)
@@ -1008,7 +1172,7 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.new-workflow-home {
+.custom-workflow-home {
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -1112,6 +1276,10 @@ export default {
 
       .ui {
         display: flex;
+        box-sizing: border-box;
+        max-height: 650px;
+        padding: 10px 0;
+        overflow: auto;
 
         &-text {
           line-height: 40px;
@@ -1142,8 +1310,8 @@ export default {
 
             .edit {
               position: absolute;
-              top: 6px;
-              right: 20%;
+              top: 8px;
+              right: 8%;
               color: #666;
               font-size: 16px;
               cursor: pointer;
@@ -1188,7 +1356,7 @@ export default {
       height: 100%;
       font-size: 14px;
       background: #fff;
-      box-shadow: 1px 1px 14px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 -5px 8px rgba(0, 0, 0, 0.06);
 
       .header {
         display: flex;
@@ -1199,6 +1367,11 @@ export default {
         line-height: 42px;
         border-top: 1px solid #ddd;
         border-bottom: 1px solid #ddd;
+
+        .name {
+          color: @themeColor;
+          cursor: pointer;
+        }
       }
 
       .main {
@@ -1307,6 +1480,16 @@ export default {
       color: @themeColor;
       font-weight: 500;
       cursor: pointer;
+    }
+  }
+}
+
+@media only screen and (max-width: 1441px) {
+  .custom-workflow-home {
+    main {
+      .ui {
+        max-height: 450px !important;
+      }
     }
   }
 }

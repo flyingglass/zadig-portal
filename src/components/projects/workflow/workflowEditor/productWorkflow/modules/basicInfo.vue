@@ -182,7 +182,7 @@ export default {
     },
     getEnvServices (projectName) {
       listProductAPI(projectName).then(res => {
-        this.filteredEnvs = res
+        this.filteredEnvs = res.filter(re => !re.production)
       })
     }
   },

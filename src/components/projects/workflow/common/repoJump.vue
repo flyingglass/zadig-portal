@@ -75,7 +75,7 @@
     </el-tooltip>
     <i v-if=" build.commit_id" class="iconfont iconicon_git-commit repo-icon"></i>
     <el-tooltip
-      :content="(build.source==='gerrit')?`暂不支持在该类型上查看 Commit`:`在 ${build.source} 上查看 Commit`"
+      :content="`在 ${build.source} 上查看 Commit`"
       placement="top"
       effect="dark"
     >
@@ -85,7 +85,8 @@
           :href="`${build.address}/${build.repo_owner}/${build.repo_name}/commit/${build.commit_id}`"
           target="_blank"
         >{{build.commit_id.substring(0, 10)}}</a>
-        <span v-else-if="build.source==='gerrit'&& (!build.prs||build.prs.length===0)">{{''+build.commit_id.substring(0, 8)}}</span>
+        <a v-else-if="build.source==='gerrit'&& (!build.prs||build.prs.length===0)" :href="`${build.address}/c/${build.repo_name}/+/${build.submission_id}`"
+          target="_blank">{{''+build.commit_id.substring(0, 8)}}</a>
         <span v-else-if="build.source==='gerrit'&& build.prs&&build.prs.length>0" class="link">
           <a :href="`${build.address}/c/${build.repo_name}/+/${curPr}`" target="_blank">
             <span v-for="item in build.prs" :key="item" @click="setPr(item)">#{{item}}</span>

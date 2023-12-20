@@ -1,5 +1,62 @@
 <template>
   <div class="aside__wrap">
+  <el-dialog :title="mode ==='edit'?$t('services.k8s.editKv'):$t('services.k8s.addKv')" :visible.sync="variableDialogVisible" width="480px" custom-class="variable-dialog">
+      <el-form ref="variableForm" :model="serviceVariableKv" label-width="105px" label-position="left">
+        <el-form-item :label="$t('global.key')" prop="key" :rules="{required: true, message: $t('services.k8s.inputKey'), trigger: ['blur', 'change']}">
+          <el-input size="small" v-model="serviceVariableKv.key"  :disabled="mode === 'edit'"></el-input>
+        </el-form-item>
+        <el-form-item :label="$t('global.type')" prop="type" :rules="{required: true, message: $t('services.k8s.selectType'), trigger: ['blur', 'change']}">
+          <el-select v-model="serviceVariableKv.type" @change="changeVariableType" class="full-width" size="small" :placeholder="$t('services.k8s.selectType')">
+            <el-option :label="$t('global.string')" value="string"></el-option>
+            <el-option :label="$t('global.enumeration')" value="enum"></el-option>
+            <el-option :label="$t('global.boolean')" value="bool"></el-option>
+            <el-option label="YAML" value="yaml"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="serviceVariableKv.type === 'enum'" :label="$t('services.k8s.optionalValues')" prop="optionsStr" :rules="{required: true, message: $t('services.k8s.inputOptionalValues'), trigger: ['blur', 'change']}">
+          <el-input type="textarea" :autosize="{ minRows: 2}" size="small" :placeholder="$t('services.k8s.optionalValuesPlaceholder')" v-model="serviceVariableKv.optionsStr"></el-input>
+        </el-form-item>
+        <el-form-item v-if="serviceVariableKv.type === 'bool'" :label="$t('global.value')" prop="value">
+           <el-switch v-model="serviceVariableKv.value" :active-value="serviceVariableKv.value===true?true:'true'" :inactive-value="serviceVariableKv.value===false?false:'false'"></el-switch>
+        </el-form-item>
+        <el-form-item v-else-if="serviceVariableKv.type === 'enum'" :label="$t('global.value')" prop="value" :rules="{required: true, message: $t('services.k8s.selectDefaultValue'), trigger: ['blur', 'change']}">
+          <el-select v-model="serviceVariableKv.value"  class="full-width" size="small" :placeholder="$t('services.k8s.selectDefaultValue')">
+            <template v-if="serviceVariableKv.optionsStr">
+             <el-option v-for="(item,index) in serviceVariableKv.optionsStr.split(',')" :key="index" :label="item" :value="item"></el-option>
+            </template>
+          </el-select>
+        </el-form-item>
+        <el-form-item v-else-if="serviceVariableKv.type === 'yaml'" :label="$t('global.value')" prop="value" :rules="{required: false, message: $t('services.k8s.inputValue'), trigger: ['blur', 'change']}">
+          <div class="yaml-variable-editor">
+            <VariablesEditor
+              style="width: 100%; height: 100%;"
+              ref="variablesYamlEditor"
+              @input="onYamlVariablesCodeChange"
+              :value="serviceVariableKv.value"
+              :options="{
+                tabSize: 5,
+                readOnly: false,
+                theme: 'neo',
+                mode: 'text/x-yaml',
+                lineNumbers: true,
+                line: true,
+                collapseIdentical: true
+              }"
+            />
+          </div>
+        </el-form-item>
+        <el-form-item v-else-if="serviceVariableKv.type === 'string'" :label="$t('global.value')" prop="value" :rules="{required: false, message: $t('services.k8s.inputKey'), trigger: ['blur', 'change']}">
+          <el-input size="small" :placeholder="$t('services.k8s.inputValue')" v-model="serviceVariableKv.value"></el-input>
+        </el-form-item>
+        <el-form-item :label="$t('global.desc')">
+          <el-input type="textarea" :rows="2" size="small" v-model="serviceVariableKv.desc"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="primary" size="small" @click="mode === 'add'?saveVariable():updateVariable()">{{$t('global.save')}}</el-button>
+        <el-button size="small" @click="cancel">{{$t('global.cancel')}}</el-button>
+      </span>
+    </el-dialog>
     <el-drawer title="代码源集成" :visible.sync="integrationCodeDrawer" direction="rtl">
       <IntegrationCode @cancel="integrationCodeDrawer = false" />
     </el-drawer>
@@ -40,6 +97,19 @@
               canSelectBuildName
               mini
               fromServicePage
+            />
+          </div>
+        </div>
+        <div v-if="selected === 'projectVariables'" class="service-aside--variables">
+          <div style="padding-left: 15px;">
+            <el-button @click="$router.back()" icon="el-icon-back" type="text">{{$t('global.back')}}</el-button>
+          </div>
+          <header class="service-aside-box__header">
+            <div class="service-aside-box__title">{{$t('services.k8s.globalVariablesList')}}</div>
+          </header>
+          <div class="service-aside-box__content">
+            <ProjectGlobalVariables
+              ref="projectGlobalVariables"
             />
           </div>
         </div>
@@ -133,16 +203,25 @@
               <div class="variable-operation-container">
                 <div class="tab-conatiner">
                   <el-radio-group v-model="variableSwitcher" @input="changeVariableView" size="mini">
-                    <el-radio-button label="yamlEditor">
-                      <i class="iconfont iconchakanbianliang"></i>
-                    </el-radio-button>
                     <el-radio-button label="list">
-                      <i class="iconfont iconshuru"></i>
+                      <el-tooltip effect="dark" :content="$t('global.keyValuePairs')" placement="top">
+                        <i class="iconfont iconliebiao"></i>
+                      </el-tooltip>
+                    </el-radio-button>
+                    <el-radio-button label="yamlEditor">
+                      <el-tooltip effect="dark" :content="$t('global.yamlFile')" placement="top">
+                        <i class="iconfont iconyaml"></i>
+                      </el-tooltip>
                     </el-radio-button>
                   </el-radio-group>
                 </div>
                 <div class="parse-container">
-                  <el-button v-if="variableSwitcher === 'yamlEditor'" @click="parseK8sYamlVariable" class="parse-btn" type="text" >自动解析变量</el-button>
+                  <router-link v-if="checkPermissionSyncMixin({projectName: projectName, operator: 'or', actions: ['create_service','edit_service']})" :to="`${this.buildBaseUrl}?rightbar=projectVariables`">
+                   <el-button class="parse-btn" type="text">{{$t('services.k8s.globalVariablesManagement')}}</el-button>
+                  </router-link>
+                  <el-tooltip v-else effect="light" :content="$t('permission.lackPermission')" placement="top">
+                   <el-button class="permission-disabled" type="text">{{$t('services.k8s.globalVariablesManagement')}}</el-button>
+                  </el-tooltip>
                 </div>
               </div>
               <div v-if="variableSwitcher === 'yamlEditor'" class="kv-container">
@@ -155,53 +234,71 @@
                 />
               </div>
               <div v-else-if="variableSwitcher === 'list'" class="list-container">
-                <el-table :data="serviceConfigs.variable_kvs" style="width: 100%;">
-                  <el-table-column label="Key">
+                <el-table :data="serviceConfigs.service_variable_kvs" style="width: 100%;">
+                  <el-table-column :label="$t('global.key')">
                     <template slot-scope="scope">
-                      <span>{{ scope.row.key }}</span>
+                      <el-tooltip v-if="scope.row.desc" effect="dark" :content="scope.row.desc" placement="top">
+                        <span>{{ scope.row.key }}</span>
+                      </el-tooltip>
+                      <span v-else>{{ scope.row.key }}</span>
                     </template>
                   </el-table-column>
-                  <el-table-column label="Value">
+                  <el-table-column :label="$t('global.type')">
                     <template slot-scope="scope">
-                      <span v-if="scope.row.value === true">true</span>
-                      <span v-else-if="scope.row.value === false">false</span>
-                      <span v-else>{{scope.row.value}}</span>
+                      <span v-if="scope.row.type === 'string'">{{$t('global.string')}}</span>
+                      <span v-else-if="scope.row.type === 'enum'">{{$t('global.enumeration')}}</span>
+                      <span v-else-if="scope.row.type === 'bool'">{{$t('global.boolean')}}</span>
+                      <span v-else-if="scope.row.type === 'yaml'">YAML</span>
                     </template>
                   </el-table-column>
-                  <el-table-column>
-                    <template v-slot:header>
-                      <span>服务变量中可见</span>
-                        <el-tooltip effect="dark" content="关闭后在「环境」-「服务变量」中不可配置" placement="top">
-                          <span class="icon-tooltip">
-                            <i class="el-icon-question"></i>
-                          </span>
-                        </el-tooltip>
-                        <el-tooltip effect="dark" :content="showAllVariables? '全部隐藏' : '全部显示'" placement="top">
-                          <el-button @click="changeAllVariablesView" :disabled="service.template_id!==''&&service.auto_sync" class="var-button" type="text">
-                            <i class="iconfont icon" :class="{'iconview-off1': !showAllVariables, iconview: showAllVariables}" :style="{ color: showAllVariables?'#0066ff':'#99a9bf' }">
-                            </i>
-                          </el-button>
-                        </el-tooltip>
+                  <el-table-column :label="$t('global.value')">
+                    <template slot-scope="scope">
+                      <el-input v-if="scope.row.type === 'string' || scope.row.type === 'yaml'" size="mini" v-model="scope.row.value" disabled></el-input>
+                      <el-select v-else-if="scope.row.type === 'enum'" v-model="scope.row.value" size="mini" disabled>
+                      </el-select>
+                      <el-switch v-else-if="scope.row.type === 'bool'" v-model="scope.row.value" disabled :active-value="scope.row.value===true?true:'true'" :inactive-value="scope.row.value===false?false:'false'"></el-switch>
                     </template>
-                    <span slot-scope="scope" :key="service.service_name">
-                      <el-button v-if="scope.row.show" @click="disableVariableView(scope.row)" :disabled="service.template_id!==''&&service.auto_sync" class="var-button"  type="text">
-                        <i class="icon-view el-icon-view"></i>
+                  </el-table-column>
+                  <el-table-column label="">
+                    <template slot-scope="scope">
+                      <div class="variable-list-operation">
+                      <el-button v-if="checkPermissionSyncMixin({projectName: projectName, operator: 'or', actions: ['create_service','edit_service']})" type="text" size="medium" @click="editCurrentVariable(scope.row)">
+                        <i class="icon el-icon-edit edit"></i>
                       </el-button>
-                      <el-button v-else @click="enableVariableView(scope.row)" :disabled="service.template_id!==''&&service.auto_sync" class="var-button  not-show" type="text">
-                        <i class="icon-view iconfont iconinvisible"></i>
+                      <el-tooltip v-else effect="light" :content="$t('permission.lackPermission')" placement="top">
+                        <el-button class="permission-disabled"  type="text" size="medium">
+                          <i class="icon el-icon-edit"></i>
+                        </el-button>
+                      </el-tooltip>
+                      <el-button v-if="checkPermissionSyncMixin({projectName: projectName, operator: 'or', actions: ['create_service','edit_service']})" type="text" size="medium" @click="deleteCurrentVariable(scope.$index)">
+                        <i class="icon el-icon-remove-outline delete"></i>
                       </el-button>
-                    </span>
+                      <el-tooltip v-else effect="light" :content="$t('permission.lackPermission')" placement="top">
+                        <el-button class="permission-disabled"  type="text" size="medium">
+                          <i class="icon el-icon-remove-outline"></i>
+                        </el-button>
+                      </el-tooltip>
+                      </div>
+                    </template>
                   </el-table-column>
                 </el-table>
+                <div class="variable-list-operation">
+                  <el-button v-hasPermi="{projectName: projectName, operator: 'or', actions: ['create_service','edit_service'],isBtn:true}" type="text" size="medium" @click="addVariable">
+                    <i class="icon el-icon-circle-plus-outline"></i>
+                  </el-button>
+                </div>
               </div>
               <div class="operation">
                 <el-button
+                  v-hasPermi="{projectName: projectName, operator: 'or', actions: ['create_service','edit_service'],isBtn:true}"
                   type="primary"
                   size="small"
                   @click="validateVariables"
                   plain
                 >{{$t(`global.validate`)}}</el-button>
                 <el-button
+                  v-if="variableSwitcher === 'yamlEditor'"
+                  v-hasPermi="{projectName: projectName, operator: 'or', actions: ['create_service','edit_service'],isBtn:true}"
                   type="primary"
                   size="small"
                   @click="saveServiceVariable"
@@ -233,25 +330,27 @@
 </template>
 <script>
 import {
-  serviceTemplateWithConfigAPI,
+  projectServiceWithConfigAPI,
   getSingleProjectAPI,
   getRegistryWhenBuildAPI,
   getCodeProviderAPI,
   validateKubernetesTemplateVariableAPI,
   saveServiceVariableAPI,
-  parseK8sYamlVariableAPI,
-  flatVariableToKvAPI
+  convertVariableToKvAPI
 } from '@api'
 import CommonBuild from '@/components/projects/build/commonBuild.vue'
-import Help from './container/help.vue'
-import Policy from './container/policy.vue'
+import Help from './common/help.vue'
+import Policy from './common/policy.vue'
 import IntegrationCode from '../common/integrationCode.vue'
+import ProjectGlobalVariables from '../common/projectGlobalVariables.vue'
 import IntegrationRegistry from '@/components/projects/common/integrationRegistry.vue'
 import { codemirror } from 'vue-codemirror'
 import 'codemirror/lib/codemirror.css'
 import 'codemirror/theme/neo.css'
+import store from 'storejs'
 import qs from 'qs'
-import { debounce, difference, sortBy } from 'lodash'
+import { debounce, cloneDeep } from 'lodash'
+import { mapState } from 'vuex'
 
 export default {
   data () {
@@ -260,8 +359,7 @@ export default {
       customEnvs: [],
       serviceConfigs: {
         variable_yaml: '',
-        service_vars: [],
-        variable_kvs: []
+        service_variable_kvs: []
       },
       integrationCodeDrawer: false,
       projectForm: {},
@@ -270,8 +368,16 @@ export default {
       buildNameIndex: 0,
       variableSwitcher: 'yamlEditor',
       initVariableYaml: '',
-      initVariableKvs: [],
-      initServiceVars: []
+      serviceVariableKv: {
+        desc: '',
+        key: '',
+        options: [],
+        optionsStr: '',
+        type: 'string',
+        value: ''
+      },
+      mode: 'add',
+      variableDialogVisible: false
     }
   },
   methods: {
@@ -325,24 +431,12 @@ export default {
         this.service.type === 'k8s' &&
         this.service.status === 'added'
       ) {
-        serviceTemplateWithConfigAPI(
+        projectServiceWithConfigAPI(
           this.service.service_name,
           this.projectNameOfService
         ).then(res => {
-          if (res.variable_kvs && res.service_vars) {
-            res.variable_kvs.forEach(element => {
-              if (res.service_vars.includes(element.key)) {
-                element.show = true
-              } else {
-                element.show = false
-              }
-            })
-            res.variable_kvs = sortBy(res.variable_kvs, 'key')
-          }
           this.serviceConfigs = res
           this.initVariableYaml = res.variable_yaml
-          this.initVariableKvs = res.variable_kvs
-          this.initServiceVars = res.service_vars
           this.$emit('onGetServiceWithConfigs', res)
         })
       }
@@ -385,96 +479,184 @@ export default {
           this.$message.error(err.message)
         })
     },
-    saveServiceVariable () {
+    async saveServiceVariable () {
       const projectName = this.projectName
       const serviceName = this.service.service_name
-      if (this.serviceConfigs.variable_kvs) {
-        const serviceVars = []
-        this.serviceConfigs.variable_kvs.forEach(element => {
-          if (element.show) {
-            serviceVars.push(element.key)
+      if (this.serviceConfigs.service_variable_kvs) {
+        this.serviceConfigs.service_variable_kvs.forEach(item => {
+          if (item.type === 'enum' && item.optionsStr) {
+            item.options = item.optionsStr.split(',')
+            delete item.optionsStr
           }
         })
-        this.serviceConfigs.service_vars = serviceVars
       }
-      const payload = {
-        variable_yaml: this.serviceConfigs.variable_yaml,
-        service_vars: this.serviceConfigs.service_vars
+      const convertPayload = {
+        action: this.variableSwitcher === 'yamlEditor' ? 'toKV' : 'toYaml',
+        kvs: this.serviceConfigs.service_variable_kvs,
+        yaml: this.serviceConfigs.variable_yaml
       }
-      saveServiceVariableAPI(serviceName, projectName, payload)
-        .then(res => {
-          if (res) {
-            this.$emit('onRefreshService')
-            this.$message.success('变量保存成功')
-          }
-        })
-        .catch(err => {
-          this.$message.error(err.message)
-        })
+      // 保存前先做 convert，同步变量和 yaml
+      const convertResult = await convertVariableToKvAPI(convertPayload).catch(err => {
+        this.$message.error(err.message)
+      })
+      if (convertResult) {
+        this.serviceConfigs.variable_yaml = convertResult.yaml
+        this.serviceConfigs.service_variable_kvs = convertResult.kvs
+      }
+      const savePayload = {
+        service_variable_kvs: this.serviceConfigs.service_variable_kvs,
+        variable_yaml: this.serviceConfigs.variable_yaml
+      }
+      const saveResult = await saveServiceVariableAPI(serviceName, projectName, savePayload).catch(err => {
+        this.$message.error(err.message)
+        this.getServiceTemplateWithConfig()
+      })
+      if (saveResult) {
+        this.getServiceTemplateWithConfig()
+        this.$message.success(this.$t('services.k8s.variablesHasBeenSuccessfullySaved'))
+      }
     },
-    parseK8sYamlVariable () {
-      const payload = {
-        variable_yaml: this.latestYaml
+    checkVariableViewType () {
+      const viewType = store.get('variableViewType')
+      if (viewType && viewType.type && viewType.username === this.username) {
+        this.variableSwitcher = viewType.type
+      } else {
+        this.variableSwitcher = 'yamlEditor'
       }
-      parseK8sYamlVariableAPI(payload)
-        .then(res => {
-          if (res) {
-            this.serviceConfigs.variable_yaml = res
-          }
-        })
-        .catch(err => {
-          this.$message.error(err.message)
-        })
     },
-    changeVariableView (val) {
-      if (val === 'list') {
-        const payload = {
-          variable_yaml: this.serviceConfigs.variable_yaml
-        }
-        flatVariableToKvAPI(payload)
-          .then(res => {
-            if (res) {
-              const latestVariableKvs = []
-              res.forEach(element => {
-                latestVariableKvs.push(element.key)
-              })
-              console.log(latestVariableKvs)
-              const initVariableKeys = []
-              this.initVariableKvs.forEach(element => {
-                initVariableKeys.push(element.key)
-              })
-              const additionVariables = difference(latestVariableKvs, initVariableKeys)
-              res.forEach(element => {
-                if (this.initServiceVars && this.initServiceVars.includes(element.key)) {
-                  element.show = true
-                }
-                if (additionVariables && additionVariables.includes(element.key)) {
-                  element.show = true
-                }
-                if (this.initVariableKvs.length === 0) {
-                  element.show = true
-                }
-              })
-              this.serviceConfigs.variable_kvs = sortBy(res, 'key')
+    changeVariableView (type) {
+      store.set('variableViewType', { type: type, username: this.username })
+      if (type === 'list') {
+        if (this.initVariableYaml !== this.serviceConfigs.variable_yaml) {
+          this.$confirm(this.$t('services.k8s.yamlChangedTooltip'), this.$t('global.tips'), {
+            confirmButtonText: this.$t('global.confirm'),
+            cancelButtonText: this.$t('global.cancel'),
+            type: 'warning'
+          }).then(() => {
+            const payload = {
+              action: 'toKV',
+              kvs: this.serviceConfigs.service_variable_kvs,
+              yaml: this.serviceConfigs.variable_yaml
             }
+            convertVariableToKvAPI(payload)
+              .then(res => {
+                this.serviceConfigs.service_variable_kvs = res.kvs
+                this.serviceConfigs.variable_yaml = res.yaml
+                this.saveServiceVariable()
+              })
+              .catch(err => {
+                this.$message.error(err.message)
+              })
+          }).catch(() => {
+            const payload = {
+              action: 'toKV',
+              kvs: this.serviceConfigs.service_variable_kvs,
+              yaml: this.initVariableYaml
+            }
+            convertVariableToKvAPI(payload)
+              .then(res => {
+                this.serviceConfigs.service_variable_kvs = res.kvs
+                this.serviceConfigs.variable_yaml = res.yaml
+              })
+              .catch(err => {
+                this.$message.error(err.message)
+              })
+          })
+        }
+      } else if (type === 'yamlEditor') {
+        const payload = {
+          action: 'toYaml',
+          kvs: this.serviceConfigs.service_variable_kvs,
+          yaml: this.serviceConfigs.variable_yaml
+        }
+        convertVariableToKvAPI(payload)
+          .then(res => {
+            this.serviceConfigs.service_variable_kvs = res.kvs
+            this.serviceConfigs.variable_yaml = res.yaml
           })
           .catch(err => {
             this.$message.error(err.message)
           })
       }
     },
-    enableVariableView (row) {
-      this.$set(row, 'show', true)
+    changeVariableType (type) {
+      if (type === 'bool') {
+        this.$set(this.serviceVariableKv, 'options', [])
+        this.$set(this.serviceVariableKv, 'optionsStr', '')
+        this.$set(this.serviceVariableKv, 'value', true)
+      } else {
+        this.$set(this.serviceVariableKv, 'options', [])
+        this.$set(this.serviceVariableKv, 'optionsStr', '')
+        this.$set(this.serviceVariableKv, 'value', '')
+      }
     },
-    disableVariableView (row) {
-      this.$set(row, 'show', false)
-    },
-    changeAllVariablesView () {
-      const currentDisplay = !this.showAllVariables
-      this.showAllVariables = currentDisplay
-      this.serviceConfigs.variable_kvs.forEach(element => {
-        this.$set(element, 'show', currentDisplay)
+    addVariable () {
+      this.mode = 'add'
+      this.$set(this, 'serviceVariableKv', {
+        desc: '',
+        key: '',
+        options: [],
+        optionsStr: '',
+        type: 'string',
+        value: ''
       })
+      this.variableDialogVisible = true
+      this.$nextTick(() => {
+        this.$refs.variableForm.clearValidate()
+      })
+    },
+    editCurrentVariable (row) {
+      this.mode = 'edit'
+      const data = cloneDeep(row)
+      if (data.type === 'enum') {
+        data.optionsStr = data.options.join(',')
+      }
+      this.serviceVariableKv = data
+      this.variableDialogVisible = true
+    },
+    cancel () {
+      this.$nextTick(() => {
+        this.$refs.variableForm.clearValidate()
+      })
+      this.$set(this, 'serviceVariableKv', {
+        desc: '',
+        key: '',
+        options: [],
+        optionsStr: '',
+        type: 'string',
+        value: ''
+      })
+      this.variableDialogVisible = false
+    },
+    deleteCurrentVariable (index) {
+      this.serviceConfigs.service_variable_kvs.splice(index, 1)
+      this.saveServiceVariable()
+    },
+    saveVariable () {
+      this.$refs.variableForm.validate((valid) => {
+        if (valid) {
+          this.serviceConfigs.service_variable_kvs.push(cloneDeep(this.serviceVariableKv))
+          this.$refs.variableForm.clearValidate()
+          this.variableDialogVisible = false
+          this.saveServiceVariable()
+        }
+      })
+    },
+    updateVariable () {
+      this.$refs.variableForm.validate((valid) => {
+        if (valid) {
+          const index = this.serviceConfigs.service_variable_kvs.findIndex(
+            item => item.key === this.serviceVariableKv.key
+          )
+          this.serviceConfigs.service_variable_kvs.splice(index, 1, cloneDeep(this.serviceVariableKv))
+          this.$refs.variableForm.clearValidate()
+          this.variableDialogVisible = false
+          this.saveServiceVariable()
+        }
+      })
+    },
+    onYamlVariablesCodeChange (code) {
+      this.serviceVariableKv.value = code
     }
   },
   created () {
@@ -486,6 +668,7 @@ export default {
     } else {
       this.changeRoute('var')
     }
+    this.checkVariableViewType()
   },
   props: {
     service: {
@@ -550,6 +733,23 @@ export default {
     },
     variableNotChanged () {
       return this.serviceConfigs.variable_yaml === this.initVariableYaml
+    },
+    ...mapState({
+      userInfo: state => state.login.userinfo
+    }),
+    username () {
+      // 系统用户
+      if (this.userInfo.identityType === 'system') {
+        if (this.userInfo.name) {
+          return `${this.userInfo.name}(${this.userInfo.account})`
+        } else {
+          return this.userInfo.account
+        } // 第三方登录
+      } else if (this.userInfo.preferred_username) {
+        return `${this.userInfo.name}(${this.userInfo.preferred_username})`
+      } else {
+        return this.userInfo.name
+      }
     }
   },
   components: {
@@ -557,6 +757,7 @@ export default {
     Policy,
     Help,
     IntegrationCode,
+    ProjectGlobalVariables,
     IntegrationRegistry,
     VariablesEditor: codemirror
   }
@@ -568,6 +769,29 @@ export default {
   display: flex;
   flex: 1;
   height: 100%;
+
+  .variable-dialog {
+    .full-width {
+      width: 100%;
+    }
+
+    .yaml-variable-editor {
+      display: inline-block;
+      width: 100%;
+      height: 200px;
+
+      .vue-codemirror {
+        width: 100%;
+        height: 100%;
+
+        /deep/.CodeMirror {
+          height: 100%;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+        }
+      }
+    }
+  }
 
   .aside__inner {
     display: flex;
@@ -637,14 +861,6 @@ export default {
               .tab-conatiner {
                 display: flex;
               }
-
-              .parse-container {
-                display: flex;
-
-                .parse-btn {
-                  padding: 0;
-                }
-              }
             }
 
             .kv-container {
@@ -668,11 +884,25 @@ export default {
             }
 
             .list-container {
-              .var-button {
-                padding: 0;
+              margin-top: 5px;
 
-                &.not-show {
-                  color: #99a9bf;
+              .variable-list-operation {
+                .icon {
+                  margin-right: 10px;
+                  font-size: 17px;
+                  cursor: pointer;
+
+                  &:last-child {
+                    margin-right: 0;
+                  }
+                }
+
+                .edit {
+                  color: @themeColor;
+                }
+
+                .delete {
+                  color: #f56c6c;
                 }
               }
             }

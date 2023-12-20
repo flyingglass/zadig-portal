@@ -22,6 +22,7 @@
                 placeholder="请选择 Chart"
                 :disabled="isUpdate"
                 size="small"
+                filterable
               >
                 <el-option v-for="(item,key) in chartWithVersion" :key="key" :label="key" :value="key"></el-option>
               </el-select>
@@ -46,7 +47,7 @@
 </template>
 
 <script>
-import { getHelmRepoAPI, getHelmRepoChartAPI, createTemplateServiceAPI, updateTemplateServiceAPI } from '@api'
+import { getHelmRepoAPI, getHelmRepoChartAPI, createHelmTemplateServiceAPI, updateHelmTemplateServiceAPI } from '@api'
 export default {
   name: 'ChartRepo',
   data () {
@@ -81,6 +82,7 @@ export default {
           this.getHelmRepoChartVersionWhenReload(val.create_from.chart_repo_name, val.create_from.chart_name)
         } else {
           this.isUpdate = false
+          this.closeSelectRepo()
         }
       },
       immediate: true
@@ -125,7 +127,7 @@ export default {
       const payload = this.chartForm
       const validateResult = await this.$refs.chartRepoForm.validate().catch((err) => { return err })
       if (validateResult) {
-        const reqApi = this.isUpdate ? updateTemplateServiceAPI : createTemplateServiceAPI
+        const reqApi = this.isUpdate ? updateHelmTemplateServiceAPI : createHelmTemplateServiceAPI
         const res = await reqApi(projectName, payload).catch(
           err => {
             this.importLoading = false
@@ -141,7 +143,7 @@ export default {
           } else {
             this.$message.error(res.failedServices[0].error)
           }
-          this.$store.dispatch('queryService', {
+          this.$store.dispatch('getHelmServices', {
             projectName: this.$route.params.project_name,
             showServiceName: payload.createFrom.chartName
           })

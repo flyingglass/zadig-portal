@@ -12,6 +12,7 @@
     >新增</el-button>
     <div v-if="showDivider" class="divider item"></div>
     <div v-for="(repo,repo_index) in config.repos" :key="repo_index">
+      <div v-if="!repo.source_from || repo.source_from === 'runtime'">
       <el-row class="repo-select">
         <el-col :span="showAdvanced || showTrigger ?4:5">
           <el-form-item
@@ -130,6 +131,9 @@
             </el-select>
           </el-form-item>
         </el-col>
+        <!-- For Global Variable Or Other Task Output -->
+        <slot name="inputOpe" :repo="repo" :repo_index="repo_index"></slot>
+        <!-- END -->
         <el-col v-if="showAdvanced" :span="3">
           <el-form-item :label="repo_index === 0 ? '高级':''">
             <div class="app-operation">
@@ -169,7 +173,7 @@
             <el-switch v-model="config.repos[repo_index].enableTrigger"></el-switch>
           </el-form-item>
         </el-col>
-        <el-col v-if="!showJustOne" :span="showAdvanced || showTrigger ?5:4 ">
+        <el-col v-if="!showJustOne" :span="4">
           <el-form-item :label="repo_index === 0 ? '操作':''">
             <div class="app-operation">
               <el-button
@@ -205,17 +209,39 @@
             <el-input v-model="repo.checkout_path" size="small" placeholder="请输入"></el-input>
           </el-form-item>
         </el-col>
-        <el-col :span="2" style="margin-left: 4px;">
+        <el-col :span="4" style="margin-left: 4px;">
           <el-form-item label="子模块">
             <el-switch v-model="repo.submodules"></el-switch>
           </el-form-item>
         </el-col>
+        <el-col :span="4">
+          <el-form-item>
+            <template slot="label">
+              <span>执行时显示</span>
+              <el-tooltip placement="top" content="关闭后，执行工作流时不显示该代码库选项">
+                <i style="cursor: pointer;" class="el-icon-warning"></i>
+              </el-tooltip>
+            </template>
+            <i class="iconfont icon"
+               :class="{'iconview-off1': repo.hidden, iconview: !repo.hidden}"
+               :style="{ color: repo.hidden ? '#99a9bf': '#0066ff' }"
+               @click="repo.hidden = !repo.hidden"
+            ></i>
+          </el-form-item>
+        </el-col>
       </el-row>
+      </div>
+      <div v-else>
+        <!-- For Global Variable Or Other Task Output -->
+        <slot name="other" :repo="repo" :repo_index="repo_index"></slot>
+        <!-- END -->
+      </div>
     </div>
   </el-form>
 </template>
 
 <script type="text/javascript">
+import { CancelToken } from 'axios'
 import {
   getCodeSourceMaskedAPI,
   getRepoOwnerByIdAPI,
@@ -234,7 +260,8 @@ export default {
         owner: false,
         repo: false,
         branch: false
-      }
+      },
+      cancelInitRepoOwnerRequest: null
     }
   },
   props: {
@@ -289,6 +316,11 @@ export default {
     }
   },
   methods: {
+    toCancelInitRepoOwnerRequest () {
+      if (this.cancelInitRepoOwnerRequest !== null) {
+        this.cancelInitRepoOwnerRequest('取消请求')
+      }
+    },
     setLoadingState (index, loading, isLoading) {
       if (this.codeInfo[index]) {
         this.codeInfo[index].loading[loading] = isLoading
@@ -315,7 +347,8 @@ export default {
         type: '',
         checkout_path: '',
         remote_name: 'origin',
-        submodules: false
+        submodules: false,
+        hidden: false
       }
       this.showTrigger && (repoMeta.enableTrigger = false)
       this.validateForm()
@@ -355,7 +388,8 @@ export default {
         branch: '',
         checkout_path: '',
         remote_name: 'origin',
-        submodules: false
+        submodules: false,
+        hidden: false
       }
       this.showTrigger && (repoMeta.enableTrigger = false)
       this.$set(this.codeInfo, 0, {
@@ -383,6 +417,7 @@ export default {
       this.config.repos.splice(index, 1)
     },
     searchNamespace (index, query) {
+      this.toCancelInitRepoOwnerRequest()
       const id = this.config.repos[index].codehost_id
       const codehostType = this.allCodeHosts.find(item => {
         return item.id === id
@@ -518,7 +553,9 @@ export default {
           loading: this.$utils.cloneObj(this.loading)
         })
         if (codehostId) {
-          getRepoOwnerByIdAPI(codehostId).then(res => {
+          getRepoOwnerByIdAPI(codehostId, '', {
+            cancelToken: new CancelToken(c => (this.cancelInitRepoOwnerRequest = c))
+          }).then(res => {
             this.$set(
               this.codeInfo[index],
               'repo_owners',
@@ -547,6 +584,8 @@ export default {
                 orderBy(res, ['name'])
               )
             })
+          }).catch(err => {
+            console.log(err)
           })
           if (!repoName) return
           getBranchInfoByIdAPI(codehostId, element.repo_namespace, repoName).then(
@@ -654,6 +693,11 @@ export default {
     font-weight: @labelWeight;
     font-size: 14px;
     line-height: 22px;
+  }
+
+  .icon {
+    font-size: 18px;
+    cursor: pointer;
   }
 }
 

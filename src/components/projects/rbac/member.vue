@@ -124,7 +124,7 @@ import {
   queryPublicRoleAPI,
   deleteRoleBindingsAPI,
   updateMutiRolebindingsAPI
-} from '@/api'
+} from '@api'
 
 import { cloneDeep } from 'lodash'
 

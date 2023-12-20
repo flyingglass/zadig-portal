@@ -1,38 +1,61 @@
 <template>
   <div class="job-operate">
-    <div
-      v-for="(item,index) in taskList"
-      :key="index"
-      class="item"
-      :class="{'active':curTaskIndex===index}"
-      @click="setCurTask(index,item)"
-    >
-      <div class="mg-b8">
-        <span class="item-title">{{item.label ? $t(`workflow.jobType.${item.label}`) : item.name}}</span>
-        <el-tag size="mini" class="item-tag mg-l8" v-if="item.is_offical" effect="plain">官方</el-tag>
+    <div class="left">
+      <div
+        v-for="(task, index) in taskList"
+        :key="index"
+        class="task"
+        @click="jumpTo(task)"
+        :class="[curGroup === task.category ? 'active' : '']"
+      >{{ task.name }}</div>
+    </div>
+    <div class="right" @scroll="onScroll">
+      <div v-for="(task, index) in taskList" :key="index" :ref="task.category">
+        <div class="task-title">{{ task.name }}</div>
+        <div
+          v-for="(item, id) in task.jobTypeList"
+          :key="`${index}-${id}`"
+          class="item"
+          :class="{'active':curTaskIndex===index}"
+          @click="setCurTask(index,item)"
+        >
+          <div class="mg-b8">
+            <span class="item-title">{{item.label ? $t(`workflow.jobType.${item.label}`) : item.name}}</span>
+            <el-tag size="mini" class="item-tag mg-l8" v-if="item.is_offical" effect="plain">官方</el-tag>
+          </div>
+          <span class="item-dec">{{item.description}}</span>
+        </div>
       </div>
-      <span class="item-dec">{{item.description}}</span>
     </div>
   </div>
 </template>
 
 <script>
-import { jobTypeList } from '../config'
+import { jobTypeGroup } from '../config'
 import { getPluginsAPI } from '@api'
+import { debounce, cloneDeep } from 'lodash'
 
 export default {
   name: 'JobOperate',
   data () {
     return {
-      jobTypeList,
+      jobTypeGroup: cloneDeep(jobTypeGroup),
       plugins: [],
-      curTaskIndex: -1
+      curTaskIndex: -1,
+      curGroup: jobTypeGroup[0].category
     }
   },
   computed: {
     taskList () {
       // 由两部分组成 一部分前端定义 + 后端插件列表（并且插件需要自己造结构）
-      return this.jobTypeList.concat(this.plugins)
+      const groupObj = {}
+      this.jobTypeGroup.forEach(group => {
+        groupObj[group.category] = group
+      })
+      this.plugins.forEach(plugin => {
+        ;(groupObj[plugin.category] || groupObj.other).jobTypeList.push(plugin)
+      })
+      return this.jobTypeGroup
     }
   },
   created () {
@@ -71,33 +94,86 @@ export default {
         this.$emit('change', item)
       }
       this.curTaskIndex = -1
+    },
+    onScroll: debounce(function (event) {
+      const scrollTop = event.target.scrollTop
+      for (let i = 0; i < this.jobTypeGroup.length; i++) {
+        const group = this.jobTypeGroup[i]
+        const cur = this.$refs[group.category][0]
+        if (
+          cur.offsetTop <= scrollTop &&
+          cur.offsetTop + cur.offsetHeight > scrollTop
+        ) {
+          this.curGroup = group.category
+          break
+        }
+      }
+    }, 100),
+    jumpTo (task) {
+      this.$refs[task.category][0].scrollIntoView({
+        behavior: 'smooth'
+      })
     }
   }
 }
 </script>
 <style lang="less" scoped>
 .job-operate {
-  .item {
-    padding: 16px;
-    text-align: left;
-    border-bottom: 1px solid #ebedef;
-    cursor: pointer;
+  position: relative;
+  display: flex;
+  height: 100%;
+  margin-left: 5px;
+  overflow: hidden;
 
-    &-title {
-      font-size: 16px;
+  .left {
+    flex: 0 0 100px;
+    padding-right: 5px;
+    border-right: 1px solid #ebedef;
+
+    .task {
+      padding: 16px;
+      text-align: left;
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(0, 102, 255, 0.07);
+      }
+    }
+  }
+
+  .right {
+    flex: 1 1 auto;
+    height: 100%;
+    overflow: auto;
+
+    .task-title {
+      padding: 5px 10px;
+      color: @secondaryColor;
     }
 
-    &-tag {
-      vertical-align: text-top;
-    }
+    .item {
+      margin: 10px;
+      padding: 16px;
+      text-align: left;
+      border: 1px solid #ebedef;
+      cursor: pointer;
 
-    &-dec {
-      color: #888;
-      font-size: 14px;
-    }
+      &-title {
+        font-size: 16px;
+      }
 
-    &:hover {
-      background: rgba(0, 102, 255, 0.07);
+      &-tag {
+        vertical-align: text-top;
+      }
+
+      &-dec {
+        color: #888;
+        font-size: 14px;
+      }
+
+      &:hover {
+        background: rgba(0, 102, 255, 0.07);
+      }
     }
   }
 

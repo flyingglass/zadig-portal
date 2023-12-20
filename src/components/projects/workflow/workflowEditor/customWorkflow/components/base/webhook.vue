@@ -16,11 +16,11 @@
         <el-col :span="6">
           <div class="content">
             <div class="cate">
-              <span class="title">名称：</span>
+              <span class="title">{{$t(`global.name`)}}：</span>
               <span class="desc">{{item.name}}</span>
             </div>
             <div class="cate">
-              <span class="title">{{$t(`global.repository`)}}</span>
+              <span class="title">{{$t(`global.repository`)}}：</span>
               <span class="desc">{{item.main_repo.repo_name + '/' + item.main_repo.branch}}</span>
             </div>
           </div>
@@ -28,11 +28,11 @@
         <el-col :span="9">
           <div class="content">
             <div class="cate">
-              <span class="title">{{$t(`workflow.targetBranch`)}}</span>
+              <span class="title">{{$t(`workflow.targetBranch`)}}：</span>
               <span class="desc">{{item.main_repo.branch}}</span>
             </div>
             <div class="cate">
-              <span class="title">{{$t(`workflow.triggerEvents`)}}</span>
+              <span class="title">{{$t(`workflow.triggerEvents`)}}：</span>
               <span class="desc">
                 <div v-if="item.main_repo.events.length">
                   <span v-for="(event,index) in item.main_repo.events" :key="index">
@@ -53,10 +53,14 @@
         <el-col :span="4">
           <div class="content">
             <div class="cate">
-              <span class="title">描述：</span>
+              <span class="title">{{$t(`global.desc`)}}：</span>
             </div>
             <div class="cate">
-              <span class="desc">{{item.description}}</span>
+              <span class="desc" v-if="item.description">
+                <el-tooltip effect="dark" :content="item.description" placement="top">
+                  <span>{{ $utils.tailCut(item.description, 20) }}</span>
+                </el-tooltip>
+              </span>
             </div>
           </div>
         </el-col>
@@ -84,7 +88,7 @@
         <el-col :span="6">
           <div class="content">
             <div class="cate">
-              <span class="title">{{$t(`workflow.triggerWay`)}}</span>
+              <span class="title">{{$t(`workflow.triggerWay`)}}：</span>
               <span v-if="item.job_type === 'timing'" class="desc">{{$t(`triggerWay.timing`)}}</span>
               <span v-else-if="item.job_type === 'gap'" class="desc">{{$t(`triggerWay.gap`)}}</span>
               <span v-else-if="item.job_type === 'crontab'" class="desc">{{$t(`triggerWay.crontab`)}}</span>
@@ -115,16 +119,95 @@
           </div>
         </el-col>
       </el-row>
+      <el-row :gutter="20" class="webhook-row" v-for="(item,index) in commons" :key="item.id">
+        <el-col :span="2">
+          <div class="content">
+            <el-switch v-model="item.enabled" @change="changeCommonStatus(item)"></el-switch>
+          </div>
+        </el-col>
+        <el-col :span="1">
+          <div class="content">
+            <span class="iconfont icontongyonggongju"></span>
+          </div>
+        </el-col>
+        <el-col :span="6">
+          <div class="content">
+            <div class="cate">
+              <span class="title">{{$t(`global.name`)}}：</span>
+              <span class="desc">
+                <el-tooltip v-if="item.name" effect="dark" :content="item.name" placement="top">
+                  <span>{{ $utils.tailCut(item.name, 10) }}</span>
+                </el-tooltip>
+              </span>
+            </div>
+          </div>
+        </el-col>
+        <el-col :span="9">
+          <div class="content">
+            <div class="cate">
+              <span class="title">{{$t(`global.desc`)}}：</span>
+              <span class="desc">
+                <el-tooltip v-if="item.description" effect="dark" :content="item.description" placement="top">
+                  <span>{{ $utils.tailCut(item.description, 20) }}</span>
+                </el-tooltip>
+              </span>
+            </div>
+          </div>
+        </el-col>
+        <el-col :span="4">
+          <div class="content">
+            <div class="cate">
+              <span class="title">Webhook Url：</span>
+              <span
+                v-clipboard:copy="getWebhookUrl(item,'generalhook')"
+                v-clipboard:success="copyCommandSuccess"
+                v-clipboard:error="copyCommandError"
+                class="el-icon-document-copy copy"
+              ></span>
+            </div>
+          </div>
+        </el-col>
+        <el-col :span="2">
+          <div class="content">
+            <div class="operation">
+              <span class="el-icon-edit" @click="editCommon(item)"></span>
+              <span class="el-icon-delete" @click="removeCommon(index,item.name)"></span>
+            </div>
+          </div>
+        </el-col>
+      </el-row>
     </div>
 
     <el-dialog
       :visible.sync="webhookDialogVisible"
       :title="webhookEditMode?$t(`workflow.editTrigger`):$t(`workflow.addTrigger`)"
       width="800px"
+      custom-class="add-webhook-dialog"
       :close-on-click-modal="false"
       append-to-body
     >
-      <el-form ref="webhookForm" :model="currentWebhook" label-position="left" :label-width="curLanguage === 'zh-cn' ?'120px' :'160px'" :rules="webhookRules">
+      <div class="webhook-mode">
+        <el-tooltip effect="dark" placement="top">
+          <div slot="content">
+            {{$t(`global.enterprisefeaturesReferforDetails`)}}
+            <el-link
+              style="font-size: 13px; vertical-align: baseline;"
+              type="primary"
+              :href="`https://docs.koderover.com/zadig/ZadigX%20v1.6.0/project/workflow-trigger/#git-触发器`"
+              :underline="false"
+              target="_blank"
+            >{{$t(`global.document`)}}</el-link>
+          </div>
+          <el-button type="text">手动创建 Webhook</el-button>
+        </el-tooltip>
+      </div>
+      <el-form
+        ref="webhookForm"
+        :model="currentWebhook"
+        label-position="left"
+        :label-width="curLanguage === 'zh-cn' ?'120px' :'160px'"
+        :rules="webhookRules"
+      >
         <el-form-item :label="$t(`global.name`)" prop="name">
           <el-input
             size="small"
@@ -135,7 +218,7 @@
             :placeholder="$t(`global.inputName`)"
           ></el-input>
         </el-form-item>
-        <el-form-item :label="$t('global.desc')" prop="description">
+        <el-form-item :label="$t(`global.desc`)" prop="description">
           <el-input size="small" type="textarea" v-model="currentWebhook.description" placeholder="请输入描述"></el-input>
         </el-form-item>
         <el-form-item :label="$t(`global.repository`)" prop="repo">
@@ -211,7 +294,13 @@
         </el-form-item>
         <el-form-item v-else-if="currentWebhook.repo.source!=='gerrit'" :label="$t(`workflow.triggerEvents`)" prop="main_repo.events">
           <el-checkbox-group v-model="currentWebhook.main_repo.events">
-            <el-checkbox v-for="tri in triggerMethods.git" :key="tri.value" :label="tri.value">{{ tri.label }}</el-checkbox>
+            <el-checkbox v-for="tri in triggerMethods.git" :key="tri.value" :label="tri.value">{{ tri.label }}
+              <span v-if="tri.value === 'tag'">
+                <el-tooltip  effect="dark" content="基于任一分支新建的 Tag 均会触发执行" placement="top">
+                  <i class="el-icon-warning" style="color: #666;"></i>
+                </el-tooltip>
+              </span>
+            </el-checkbox>
           </el-checkbox-group>
         </el-form-item>
         <el-form-item :label="$t(`workflow.triggerStrategy`)" prop="auto_cancel">
@@ -237,7 +326,10 @@
               placeholder="输入目录时，多个目录请用回车换行分隔"
             ></el-input>
           </el-form-item>
-          <ul style="color: #909399; font-size: 12px; line-height: 20px;" :style="{'paddingLeft':curLanguage === 'zh-cn' ?'120px' :'160px'}">
+          <ul
+            style="color: #909399; font-size: 12px; line-height: 20px;"
+            :style="{'paddingLeft':curLanguage === 'zh-cn' ?'120px' :'160px'}"
+          >
             <li>输入目录时，多个目录请用回车换行分隔</li>
             <li>"/" 表示代码库中的所有文件</li>
             <li>用 "!" 符号开头可以排除相应的文件</li>
@@ -251,6 +343,7 @@
           :projectName="projectName"
           :cloneWorkflow="currentWebhook.workflow_arg"
           :webhookSelectedRepo="currentWebhook.repo"
+          :timerEditMode="webhookEditMode"
         />
       </div>
       <div slot="footer">
@@ -332,14 +425,37 @@
       </div>
       <div style="margin: 10px 0;">
         <span style="display: inline-block; margin-bottom: 10px;">{{$t(`workflow.workflowExecutionVariables`)}}</span>
-        <WebhookRunConfig :workflowName="workflowName" :projectName="projectName" :cloneWorkflow="currentTimer.workflow_v4_args" />
+        <WebhookRunConfig :workflowName="workflowName" :projectName="projectName" :cloneWorkflow="currentTimer.workflow_v4_args" :timerEditMode="timerEditMode"/>
       </div>
       <div slot="footer">
         <el-button @click="timerDialogVisible = false" size="small">{{$t(`global.cancel`)}}</el-button>
         <el-button type="primary" @click="saveTimer" size="small">{{$t(`global.confirm`)}}</el-button>
       </div>
     </el-dialog>
-
+    <el-dialog
+      :title="commonEditMode?$t(`workflow.editCommonWebhook`):$t(`workflow.addCommonWebhook`)"
+      :visible.sync="commonDialogVisible"
+      width="700px"
+      :close-on-click-modal="false"
+      append-to-body
+    >
+      <el-form :model="currentCommon" ref="commonForm" :rules="commonRules" label-width="110px" label-position="left">
+        <el-form-item :label="$t(`global.name`)" prop="name">
+          <el-input v-model="currentCommon.name" size="small" :disabled="commonEditMode" placeholder="请输入名称"></el-input>
+        </el-form-item>
+        <el-form-item :label="$t(`global.desc`)">
+          <el-input v-model="currentCommon.description" size="small" placeholder="请输入描述"></el-input>
+        </el-form-item>
+      </el-form>
+      <div style="margin: 10px 0;">
+        <span style="display: inline-block; margin-bottom: 10px;">{{$t(`workflow.workflowExecutionVariables`)}}</span>
+        <WebhookRunConfig :workflowName="workflowName" :projectName="projectName" :cloneWorkflow="currentCommon.workflow_arg" :timerEditMode="commonEditMode"/>
+      </div>
+      <div slot="footer">
+        <el-button @click="commonDialogVisible = false" size="small">{{$t(`global.cancel`)}}</el-button>
+        <el-button type="primary" @click="saveCommon" size="small">{{$t(`global.confirm`)}}</el-button>
+      </div>
+    </el-dialog>
     <el-dialog
       :visible.sync="triggerTypeDialogVisible"
       :title="$t(`workflow.addTrigger`)"
@@ -368,6 +484,15 @@
             <span class="trigger-desc">{{$t(`workflow.timedTrigger`)}}</span>
           </div>
         </div>
+        <div class="trigger-item" @click="triggerTypeDialogVisible = false;addCommon()">
+          <div class="icon">
+            <span class="iconfont icontongyonggongju"></span>
+          </div>
+          <div class="detail">
+            <h4 class="trigger-title">{{$t(`workflow.commonWebhook`)}}</h4>
+            <span class="trigger-desc">{{$t(`workflow.commonWebhookTip`)}}</span>
+          </div>
+        </div>
       </div>
       <div slot="footer">
         <el-button @click="triggerTypeDialogVisible = false" size="small">{{$t(`global.cancel`)}}</el-button>
@@ -393,7 +518,12 @@ import {
   removeCustomTimerAPI,
   updateCustomTimerAPI,
   getCustomTimerPresetAPI,
-  checkRegularAPI
+  checkRegularAPI,
+  addWebhookCommonAPI,
+  updateWebhookCommonAPI,
+  getWebhookCommonAPI,
+  deleteWebhookCommonAPI,
+  getWebhookCommonPresetAPI
 } from '@api'
 const validateName = (rule, value, callback) => {
   if (!/^[a-zA-Z0-9]([a-zA-Z0-9_\-\.]*[a-zA-Z0-9])?$/.test(value)) {
@@ -459,19 +589,32 @@ const timerInfo = {
   enabled: true,
   workflow_v4_args: {}
 }
+
+const commonInfo = {
+  name: '',
+  desc: '',
+  enabled: true,
+  workflow_v4_args: {}
+}
 export default {
   data () {
     return {
       triggerTypeDialogVisible: false,
       webhookDialogVisible: false,
       timerDialogVisible: false,
+      JIRADialogVisible: false,
+      larkDialogVisible: false,
+      commonDialogVisible: false,
       selectType: '',
       webhookEditMode: true,
       timerEditMode: true,
+      commonEditMode: true,
       webhooks: [],
       timers: [],
+      commons: [],
       currentWebhook: cloneDeep(webhookInfo),
       currentTimer: cloneDeep(timerInfo),
+      currentCommon: cloneDeep(commonInfo),
       webhookBranches: {},
       webhookRepos: [],
       triggerMethods: {
@@ -533,6 +676,15 @@ export default {
         time: [{ required: true, message: '请填选择时间', trigger: 'blur' }],
         number: [{ required: true, message: '请填选择时间', trigger: 'blur' }],
         cron: [{ required: true, validator: checkCron, trigger: 'blur' }]
+      },
+      JIRARules: {
+        name: [{ required: true, message: '请输入名称', trigger: 'blur' }]
+      },
+      larkRules: {
+        name: [{ required: true, message: '请输入名称', trigger: 'blur' }]
+      },
+      commonRules: {
+        name: [{ required: true, message: '请输入名称', trigger: 'blur' }]
       },
       timerDateOptions: [
         { label: '每天', value: 'day' },
@@ -623,6 +775,24 @@ export default {
     },
     validate () {
       return this.$refs.buildEnvRef.validate()
+    },
+    getWebhookUrl (item, type) {
+      const workflowName = this.workflowName
+      const hookName = item.name
+      const host = `${window.location.protocol}//${window.location.host}`
+      return `${host}/api/aslan/workflow/v4/generalhook/${workflowName}/${hookName}/webhook`
+    },
+    copyCommandSuccess (event) {
+      this.$message({
+        message: '命令已成功复制到剪贴板',
+        type: 'success'
+      })
+    },
+    copyCommandError (event) {
+      this.$message({
+        message: '命令复制失败',
+        type: 'error'
+      })
     },
     changeWebhookStatus (webhook) {
       const projectName = this.projectName
@@ -745,158 +915,13 @@ export default {
           )
           payload.main_repo = Object.assign(payload.main_repo, payload.repo)
           delete payload.repo
+          if (payload.workflow_arg && payload.workflow_arg.fromJobInfo) {
+            delete payload.workflow_arg.fromJobInfo
+          }
           const workflowName = this.workflowName
           const projectName = this.projectName
-          payload.workflow_arg.stages.forEach(stage => {
-            stage.jobs.forEach(job => {
-              if (job.type === 'zadig-build') {
-                if (
-                  job.spec.service_and_builds &&
-                  job.spec.service_and_builds.length > 0
-                ) {
-                  job.spec.service_and_builds = job.pickedTargets
-                  job.spec.service_and_builds.forEach(item => {
-                    if (item.repos) {
-                      item.repos.forEach(repo => {
-                        if (typeof repo.prs === 'string') {
-                          repo.prs = repo.prs.split(',').map(Number)
-                        }
-                        if (repo.branchOrTag) {
-                          if (repo.branchOrTag.type === 'branch') {
-                            repo.branch = repo.branchOrTag.name
-                          }
-                          if (repo.branchOrTag.type === 'tag') {
-                            repo.tag = repo.branchOrTag.name
-                          }
-                        }
-                      })
-                    }
-                  })
-                  delete job.pickedTargets
-                }
-              }
-              if (job.type === 'freestyle') {
-                job.spec.steps.forEach(step => {
-                  if (step.type === 'git') {
-                    step.spec.repos.forEach(repo => {
-                      if (typeof repo.prs === 'string') {
-                        repo.prs = repo.prs.split(',').map(Number)
-                      }
-                      if (repo.branchOrTag) {
-                        if (repo.branchOrTag.type === 'branch') {
-                          repo.branch = repo.branchOrTag.name
-                        }
-                        if (repo.branchOrTag.type === 'tag') {
-                          repo.tag = repo.branchOrTag.name
-                        }
-                      }
-                    })
-                  }
-                })
-              }
-              if (job.type === 'zadig-deploy') {
-                job.spec.service_and_images = cloneDeep(job.pickedTargets)
-                if (
-                  job.spec.service_and_images &&
-                  job.spec.service_and_images.length > 0
-                ) {
-                  job.spec.service_and_images.forEach(item => {
-                    delete item.images
-                  })
-                  delete job.pickedTargets
-                }
-              }
-              if (job.type === 'custom-deploy') {
-                job.spec.targets = cloneDeep(job.pickedTargets)
-                delete job.pickedTargets
-              }
-              if (job.type === 'zadig-test') {
-                job.spec.test_modules = cloneDeep(job.pickedTargets)
-                if (job.spec.test_modules && job.spec.test_modules.length > 0) {
-                  job.spec.test_modules.forEach(item => {
-                    if (item.repos) {
-                      item.repos.forEach(repo => {
-                        if (typeof repo.prs === 'string') {
-                          repo.prs = repo.prs.split(',').map(Number)
-                        }
-                        if (repo.branchOrTag) {
-                          if (repo.branchOrTag.type === 'branch') {
-                            repo.branch = repo.branchOrTag.name
-                          }
-                          if (repo.branchOrTag.type === 'tag') {
-                            repo.tag = repo.branchOrTag.name
-                          }
-                        }
-                      })
-                    }
-                  })
-                }
-                delete job.pickedTargets
-              }
-              if (job.type === 'zadig-scanning') {
-                job.spec.scannings = cloneDeep(job.pickedTargets)
-                if (job.spec.scannings && job.spec.scannings.length > 0) {
-                  job.spec.scannings.forEach(item => {
-                    if (item.repos) {
-                      item.repos.forEach(repo => {
-                        if (typeof repo.prs === 'string') {
-                          repo.prs = repo.prs.split(',').map(Number)
-                        }
-                        if (repo.branchOrTag) {
-                          if (repo.branchOrTag.type === 'branch') {
-                            repo.branch = repo.branchOrTag.name
-                          }
-                          if (repo.branchOrTag.type === 'tag') {
-                            repo.tag = repo.branchOrTag.name
-                          }
-                        }
-                      })
-                    }
-                  })
-                }
-                delete job.pickedTargets
-              }
-              if (job.type === 'zadig-distribute-image') {
-                if (job.spec.source === 'runtime') {
-                  job.spec.targets = cloneDeep(job.pickedTargets)
-                  job.spec.targets.forEach(item => {
-                    delete item.images
-                  })
-                  delete job.pickedTargets
-                } else {
-                  // fromjob
-                  if (
-                    payload.workflow_arg.fromJobInfo.pickedTargets && payload.workflow_arg.fromJobInfo.pickedTargets.length > 0
-                  ) {
-                    payload.workflow_arg.fromJobInfo.pickedTargets.forEach(
-                      item => {
-                        if (item.update_tag && !item.target_tag) {
-                          this.$message.error(
-                            this.$t(`workflow.inputTargetImage`, {
-                              serviceName: item.service_name
-                            })
-                          )
-                          throw Error()
-                        }
-                      }
-                    )
-                    job.spec.targets = payload.workflow_arg.fromJobInfo.pickedTargets.map(
-                      item => {
-                        return {
-                          service_name: item.service_name,
-                          service_module: item.service_module,
-                          source_tag: item.source_tag,
-                          target_tag: item.target_tag,
-                          update_tag: item.update_tag
-                        }
-                      }
-                    )
-                    delete payload.workflow_arg.fromJobInfo
-                  }
-                }
-              }
-            })
-          })
+          this.handleSavePayload(payload.workflow_arg.stages)
+
           if (this.webhookEditMode) {
             const result = await updateCustomWebhookAPI(
               projectName,
@@ -932,6 +957,15 @@ export default {
       updateCustomTimerAPI(projectName, timer).then(() => {
         this.getTimers()
         this.$message.success(`定时器已${timer.enabled ? '启用' : '禁用'}`)
+      })
+    },
+    changeCommonStatus (common) {
+      const workflowName = this.workflowName
+      updateWebhookCommonAPI(workflowName, common).then(() => {
+        this.getCommons()
+        this.$message.success(
+          `通用触发器 已${common.enabled ? '启用' : '禁用'}`
+        )
       })
     },
     async getTimers () {
@@ -990,65 +1024,8 @@ export default {
           const payload = cloneDeep(this.currentTimer)
           const workflowName = this.workflowName
           const projectName = this.projectName
-          payload.workflow_v4_args.stages.forEach(stage => {
-            stage.jobs.forEach(job => {
-              job.spec.service_and_builds = job.pickedTargets
-              delete job.pickedTargets
-              if (
-                job.spec.service_and_images &&
-                job.spec.service_and_images.length > 0
-              ) {
-                job.spec.service_and_images.forEach(item => {
-                  delete item.images
-                })
-              }
-              if (
-                job.spec.service_and_builds &&
-                job.spec.service_and_builds.length > 0
-              ) {
-                job.spec.service_and_builds.forEach(item => {
-                  if (item.repos) {
-                    item.repos.forEach(repo => {
-                      if (typeof repo.prs === 'string') {
-                        repo.prs = repo.prs.split(',').map(Number)
-                      }
-                      if (repo.branchOrTag) {
-                        if (repo.branchOrTag.type === 'branch') {
-                          repo.branch = repo.branchOrTag.name
-                        }
-                        if (repo.branchOrTag.type === 'tag') {
-                          repo.tag = repo.branchOrTag.name
-                        }
-                      }
-                    })
-                  }
-                })
-              }
-              if (job.type === 'freestyle') {
-                job.spec.steps.forEach(step => {
-                  if (step.type === 'git') {
-                    step.spec.repos.forEach(repo => {
-                      if (typeof repo.prs === 'string') {
-                        repo.prs = repo.prs.split(',').map(Number)
-                      }
-                      if (repo.branchOrTag) {
-                        if (repo.branchOrTag.type === 'branch') {
-                          repo.branch = repo.branchOrTag.name
-                        }
-                        if (repo.branchOrTag.type === 'tag') {
-                          repo.tag = repo.branchOrTag.name
-                        }
-                      }
-                    })
-                  }
-                })
-              }
-              if (job.type === 'zadig-deploy') {
-                job.spec.service_and_images = job.spec.service_and_builds
-                delete job.spec.service_and_builds
-              }
-            })
-          })
+          this.handleSavePayload(payload.workflow_v4_args.stages)
+
           if (this.timerEditMode) {
             const result = await updateCustomTimerAPI(projectName, payload)
             if (result) {
@@ -1068,6 +1045,72 @@ export default {
               this.$refs.timerForm.resetFields()
               this.timerDialogVisible = false
               this.getTimers()
+            }
+          }
+        } else {
+          return false
+        }
+      })
+    },
+    async getCommons () {
+      const workflowName = this.workflowName
+      const result = await getWebhookCommonAPI(workflowName)
+      if (result) {
+        this.commons = result
+      }
+    },
+    async addCommon () {
+      const workflowName = this.workflowName
+      this.currentCommon = cloneDeep(commonInfo)
+      const preset = await getWebhookCommonPresetAPI(workflowName)
+      if (preset) {
+        this.$set(
+          this.currentCommon,
+          'workflow_arg',
+          cloneDeep(preset.workflow_arg)
+        )
+        this.commonEditMode = false
+        this.commonDialogVisible = true
+      }
+    },
+    async editCommon (item) {
+      const workflowName = this.workflowName
+      this.commonEditMode = true
+      const currentCommon = cloneDeep(item)
+      const name = currentCommon.name
+      const preset = await getWebhookCommonPresetAPI(workflowName, name)
+      this.$set(currentCommon, 'workflow_arg', cloneDeep(preset.workflow_arg))
+      this.currentCommon = currentCommon
+      this.commonDialogVisible = true
+    },
+    removeCommon (index, name) {
+      const workflowName = this.workflowName
+      deleteWebhookCommonAPI(workflowName, name).then(res => {
+        this.$message.success('删除成功')
+        this.getCommons()
+      })
+    },
+    saveCommon () {
+      this.$refs.commonForm.validate(async valid => {
+        if (valid) {
+          const payload = cloneDeep(this.currentCommon)
+          const workflowName = this.workflowName
+          this.handleSavePayload(payload.workflow_arg.stages)
+          if (this.commonEditMode) {
+            const result = await updateWebhookCommonAPI(workflowName, payload)
+            if (result) {
+              this.$message.success('修改成功')
+              this.$refs.commonForm.resetFields()
+              this.commonDialogVisible = false
+              this.getCommons()
+            }
+          } else {
+            const result = await addWebhookCommonAPI(workflowName, payload)
+            if (result) {
+              this.$message.success('添加成功')
+              this.$refs.commonForm.resetFields()
+              this.commonDialogVisible = false
+              this.getCommons()
             }
           }
         } else {
@@ -1113,6 +1156,66 @@ export default {
             this.$emit('closeDrawer')
           })
       }
+    },
+    handleSavePayload (stages) {
+      stages.forEach(stage => {
+        stage.jobs.forEach(job => {
+          job.spec.service_and_builds = job.pickedTargets
+          if (
+            job.spec.service_and_images &&
+            job.spec.service_and_images.length > 0
+          ) {
+            job.spec.service_and_images.forEach(item => {
+              delete item.images
+            })
+          }
+          if (
+            job.spec.service_and_builds &&
+            job.spec.service_and_builds.length > 0
+          ) {
+            job.spec.service_and_builds.forEach(item => {
+              if (item.repos) {
+                item.repos.forEach(repo => {
+                  if (typeof repo.prs === 'string') {
+                    repo.prs = repo.prs.split(',').map(Number)
+                  }
+                  if (repo.branchOrTag) {
+                    if (repo.branchOrTag.type === 'branch') {
+                      repo.branch = repo.branchOrTag.name
+                    }
+                    if (repo.branchOrTag.type === 'tag') {
+                      repo.tag = repo.branchOrTag.name
+                    }
+                  }
+                })
+              }
+            })
+          }
+          if (job.type === 'freestyle') {
+            job.spec.steps.forEach(step => {
+              if (step.type === 'git') {
+                step.spec.repos.forEach(repo => {
+                  if (typeof repo.prs === 'string') {
+                    repo.prs = repo.prs.split(',').map(Number)
+                  }
+                  if (repo.branchOrTag) {
+                    if (repo.branchOrTag.type === 'branch') {
+                      repo.branch = repo.branchOrTag.name
+                    }
+                    if (repo.branchOrTag.type === 'tag') {
+                      repo.tag = repo.branchOrTag.name
+                    }
+                  }
+                })
+              }
+            })
+          }
+          if (job.type === 'zadig-deploy') {
+            job.spec.service_and_images = job.spec.service_and_builds
+            delete job.spec.service_and_builds
+          }
+        })
+      })
     }
   },
   watch: {
@@ -1148,10 +1251,13 @@ export default {
           if (this.isEdit) {
             this.getWebhooks()
             this.getTimers()
-            this.checkingBuildStageChanged(
-              cloneDeep(this.config),
-              cloneDeep(this.originalWorkflow)
-            )
+            this.getCommons()
+            this.$nextTick(() => {
+              this.checkingBuildStageChanged(
+                cloneDeep(this.config),
+                cloneDeep(this.originalWorkflow)
+              )
+            })
           }
         }
       },
@@ -1194,6 +1300,17 @@ export default {
 
   & > div {
     margin-right: 10px;
+  }
+}
+
+.add-webhook-dialog {
+  .el-dialog__body {
+    padding: 0 25px 25px 30px;
+
+    .webhook-mode {
+      display: block;
+      text-align: right;
+    }
   }
 }
 
@@ -1280,6 +1397,10 @@ export default {
           color: @secondaryColor;
           font-weight: 400;
           font-size: 12px;
+        }
+
+        .copy {
+          cursor: pointer;
         }
 
         .desc {

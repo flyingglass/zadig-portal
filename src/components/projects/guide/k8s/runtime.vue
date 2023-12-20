@@ -58,12 +58,23 @@
           >
             <CreateEnv ref="createEnvRef" :envInfos="envInfos" :currentEnv="activeName" />
           </div>
-          <div class="ai-bottom">
-            <el-button type="primary" size="small" @click="createK8sProductEnv" :loading="isCreating" :disabled="!cantNext">{{$t('environments.common.envCreation')}}</el-button>
-            <div v-for="(env, index) in createRes" :key="index" class="ai-status">
-              <span class="env-name">{{env.name}}:</span>
-              <span>{{getStatusDesc(env)}}</span>
-            </div>
+          <div class="env-creation-info">
+            <el-table  v-if="createRes.length > 0" :data="createRes" style="width: 100%;">
+              <el-table-column :label="$t('environments.common.envName')">
+                <template slot-scope="scope">
+                  <span>{{scope.row.name}}</span>
+                </template>
+              </el-table-column>
+              <el-table-column :label="$t('global.status')">
+                <template slot-scope="scope">
+                  <span v-if="scope.row.status === 'creating'" class="el-icon-loading loader"></span>
+                  <el-tag v-else-if="scope.row.status === 'success'" type="success" size="mini" effect="plain">{{getStatusDesc(scope.row)}}</el-tag>
+                  <el-tag v-else-if="scope.row.status === 'failed'" type="danger" size="mini" effect="plain">{{getStatusDesc(scope.row)}}</el-tag>
+                  <el-tag v-else-if="scope.row.status === 'Unstable'" type="warning" size="mini" effect="plain">{{getStatusDesc(scope.row)}}</el-tag>
+                </template>
+              </el-table-column>
+            </el-table>
+            <el-button type="primary" size="small" @click="createK8sProductEnv" :loading="isCreating" :disabled="!cantNext" class="env-creation-btn">{{$t('environments.common.envCreation')}}</el-button>
           </div>
         </div>
       </div>
@@ -355,18 +366,15 @@ export default {
           overflow: hidden;
         }
 
-        .ai-bottom {
-          margin-top: 10px;
+        .env-creation-info {
+          margin: 10px 0;
 
-          .ai-status {
-            margin: 8px 0;
-            font-size: 13px;
+          .loader {
+            color: @themeColor;
+          }
 
-            .env-name {
-              display: inline-block;
-              margin-right: 8px;
-              color: #e6a23c;
-            }
+          .env-creation-btn {
+            margin: 10px 0;
           }
         }
       }

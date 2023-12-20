@@ -54,7 +54,10 @@ export default {
     }
   },
   mounted () {
-    bus.$emit('set-topbar-title', { title: '系统配置', breadcrumb: [] })
+    bus.$emit('set-topbar-title', { title: '', breadcrumb: [{ title: this.$t(`sidebarMenu.settings`), url: '' }] })
+    if (this.$route.query.tab && this.$route.query.tab === 'mail') {
+      this.activeTab = 'mail'
+    }
   }
 }
 </script>

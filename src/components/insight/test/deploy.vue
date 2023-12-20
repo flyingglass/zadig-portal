@@ -81,7 +81,7 @@ export default {
       getTestDeployAPI({
         startDate: startTime,
         endDate: endTime,
-        selectedProjects: selectedProjects
+        projectNames: selectedProjects
       }).then(res => {
         this.option.xAxis.data = res
           .map(element => {

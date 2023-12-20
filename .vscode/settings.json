@@ -74,6 +74,7 @@
   // 保存时代码自动格式化
   // "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
+    // "source.fixAll": false,
     "source.fixAll.eslint": true,
     "source.fixAll.stylelint": true
   },

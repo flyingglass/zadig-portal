@@ -154,7 +154,7 @@ export default {
             sse.subscribe('', data => {
               this.hasNewTestMsg = true
               this.wsTestDataBuffer = this.wsTestDataBuffer.concat(
-                Object.freeze(data + '\n')
+                Object.freeze(data)
               )
             })
           })
@@ -186,7 +186,7 @@ export default {
         'test'
       ).then(response => {
         this.testAnyLog = response.split('\n').map(element => {
-          return element + '\n'
+          return element
         })
       })
     }

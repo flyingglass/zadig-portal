@@ -4,36 +4,43 @@
     custom-class="create-user-dialog"
     :close-on-click-modal="false"
     :visible.sync="isShowDialogRoleVisible"
+    width="50%"
   >
-    <el-form :model="form" @submit.native.prevent ref="roleForm" :rules="rules" label-position="left" label-width="125px" class="primary-form">
+    <el-form :model="form" @submit.native.prevent ref="roleForm" :rules="rules" label-position="left" label-width="100px" class="primary-form">
       <el-form-item :label="$t('sysSetting.users.roleName')" prop="name">
         <el-input size="small" v-model="form.name" :disabled="isEdit"></el-input>
       </el-form-item>
       <el-form-item :label="$t('sysSetting.users.roleDesc')" prop="account">
         <el-input size="small" v-model="form.desc"></el-input>
       </el-form-item>
-      <el-form-item :label="$t('sysSetting.users.permissionList')" prop="permissions" label-width="125px">
-        <div class="permissions-group" v-for="(group,group_index) in permissionGroups" :key="group_index">
-          <el-checkbox
-            :label="group.resource"
-            :key="group.resource"
-            :value="calculatePermissionGroupsCheckedState(group.rules)"
-            @change="handlePermissionGroupChange(group.rules)"
-            :indeterminate="isIndeterminate(group.resource,group.rules)"
-          >{{group.alias}}</el-checkbox>
-          <div class="sub-permissions">
-            <el-checkbox-group v-model="form.permissions">
-              <span  v-for="(subPermission,sub_index) in group.rules" :key="sub_index" >
-                <span style="margin-left: 20px; font-size: 14px;" v-if="subPermission.parent">{{subPermission.parent}}</span>
+      <el-form-item :label="$t('sysSetting.users.permissionList')" prop="permissions">
+        <el-table :data="permissionGroups" border style="line-height: 1.2;">
+          <el-table-column label="操作对象" prop="alias" width="95px"></el-table-column>
+          <el-table-column label="权限项">
+            <template slot-scope="{ row }">
+              <el-checkbox-group v-model="form.permissions">
                 <el-checkbox
                   class="sub-permissions-checkbox"
+                  v-for="(subPermission,sub_index) in row.rules"
+                  :key="sub_index"
                   :label="subPermission.uniqueAction"
-                >{{(subPermission.parent|| subPermission.isChild) ? subPermission.alias.split('|')[1]:subPermission.alias}}</el-checkbox>
-                <br v-if="subPermission.parent" />
-              </span>
-            </el-checkbox-group>
-          </div>
-        </div>
+                >
+                {{subPermission.alias}}
+                </el-checkbox>
+              </el-checkbox-group>
+            </template>
+          </el-table-column>
+          <el-table-column  width="36px">
+            <template slot-scope="{ row }">
+              <el-checkbox
+                :key="row.resource"
+                :value="calculatePermissionGroupsCheckedState(row.rules)"
+                @change="handlePermissionGroupChange(row.rules)"
+                :indeterminate="isIndeterminate(row.resource,row.rules)"
+              ></el-checkbox>
+            </template>
+          </el-table-column>
+        </el-table>
       </el-form-item>
     </el-form>
     <div slot="footer" class="dialog-footer">
@@ -100,7 +107,10 @@ export default {
         }
       }
       return {
-        name: { required: true, trigger: 'change', validator: validateRoleName }
+        name: { required: true, trigger: 'change', validator: validateRoleName },
+        permissions: [
+          { type: 'array', required: true, message: this.$t('project.rbac.selectAtLeastOnePermission'), trigger: 'change' }
+        ]
       }
     }
   },
@@ -162,7 +172,7 @@ export default {
       if (res) {
         res.forEach(group => {
           group.rules = group.rules.filter((item) => {
-            return item.action !== 'release_get'
+            return item.action !== 'release_get' && item.action !== 'edit_dashboard_config'
           })
           group.rules.forEach((item, index) => {
             item.uniqueAction = `${group.resource}/${item.action}`

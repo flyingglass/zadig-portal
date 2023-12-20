@@ -46,26 +46,27 @@
         </TestTimer>
       </div>-->
 
-      <!-- <div class="notify">
+      <div class="notify">
         <el-form-item>
-          <template slot="label">通知配置</template>
-          <el-button
-            @click="scannerConfig.advanced_settings.notify_ctl.enabled = !scannerConfig.advanced_settings.notify_ctl.enabled"
-            type="primary"
-            size="small"
-            plain
-          >{{scannerConfig.advanced_settings.notify_ctl.enabled ? '删除': '添加'}}</el-button>
+          <template slot="label">
+            <span>{{$t(`scanning.advancedSettings.hooksAndNotification.notificationTitle`)}}</span>
+            <el-tooltip  effect="dark" placement="top">
+              <div slot="content">
+                {{$t(`global.enterprisefeaturesReferforDetails`)}}
+                <el-link
+                  style="font-size: 13px; vertical-align: baseline;"
+                  type="primary"
+                  href="https://docs.koderover.com/zadig/project/scan/#触发器与通知"
+                  :underline="false"
+                  target="_blank"
+                >{{$t(`global.document`)}}</el-link>
+              </div>
+              <i class="el-icon-warning"></i>
+            </el-tooltip>
+          </template>
+          <el-button type="primary" size="small" plain disabled>{{$t(`global.add`)}}</el-button>
         </el-form-item>
-        <Notify
-          v-if="scannerConfig.advanced_settings.notify_ctl.enabled"
-          ref="notifyComp"
-          :editMode="isEdit"
-          :notify="scannerConfig.advanced_settings.notify_ctl"
-          :showTitle="false"
-          :fromWorkflow="false"
-          class="notify-content"
-        />
-      </div> -->
+      </div>
     </el-form>
   </div>
 </template>
@@ -73,7 +74,6 @@
 <script>
 import BuildAdvancedConfig from '@/components/projects/build/advancedConfig.vue'
 import TestTrigger from '@/components/common/testTrigger.vue'
-import Notify from '@/components/projects/workflow/workflowEditor/productWorkflow/modules/notify.vue'
 export default {
   props: {
     scannerConfig: Object,
@@ -114,8 +114,7 @@ export default {
   },
   components: {
     BuildAdvancedConfig,
-    TestTrigger,
-    Notify
+    TestTrigger
   }
 }
 </script>

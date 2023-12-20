@@ -25,8 +25,21 @@
                       show-password
                     ></el-input>
                   </el-form-item>
+                  <el-form-item v-if="captcha && captcha.id" :label="$t(`login.captcha`)" prop="captcha_answer">
+                    <el-input
+                      @keyup.enter.native="login"
+                      v-model="loginForm.captcha_answer"
+                      autocomplete="off"
+                      clearable=""
+                      :placeholder="$t(`login.inputCaptcha`)"
+                    >
+                    <template slot="prepend">
+                      <img class="captcha-img" :src="captcha.content" @click="getCaptcha">
+                    </template>
+                    </el-input>
+                  </el-form-item>
                 </el-form>
-                <el-button type="submit" @click="login" v-loading="loading" class="btn-md btn-theme login-btn">{{$t(`login.signIn`)}}</el-button>
+                <el-button type="submit" @click="login" :loading="loading" class="btn-md btn-theme login-btn">{{$t(`login.signIn`)}}</el-button>
               </section>
               <div class="bottom">
                 <a @click="showForgotPassword = true">{{$t(`login.forgotPassword`)}}</a>
@@ -73,7 +86,8 @@ import moment from 'moment'
 import { isMobile } from 'mobile-device-detect'
 import {
   checkConnectorsAPI,
-  checkRegistrationAPI
+  checkRegistrationAPI,
+  getCaptchaAPI
 } from '@api'
 import ForgetPassword from './components/forgetPassword.vue'
 import SignUp from './components/signUp.vue'
@@ -94,9 +108,12 @@ export default {
       loading: false,
       loginForm: {
         account: '',
-        password: ''
+        password: '',
+        captcha_answer: '',
+        captcha_id: ''
       },
-      moment
+      moment,
+      captcha: null
     }
   },
   methods: {
@@ -106,9 +123,12 @@ export default {
           this.loading = true
           const payload = this.loginForm
           const res = await this.$store.dispatch('LOGIN', payload)
-          if (res) {
+          if (res.userInfo) {
             this.loading = false
             this.redirectByDevice()
+          } else if (res.errorHeaders && res.errorHeaders['x-require-captcha'] === 'true') {
+            this.loading = false
+            this.getCaptcha()
           } else {
             this.loading = false
           }
@@ -117,7 +137,7 @@ export default {
         }
       })
     },
-    async checkLogin () {
+    async checkLogin (fromReset = false) {
       const userInfo = store.get('userInfo')
       if (userInfo) {
         this.redirectByDevice()
@@ -125,6 +145,8 @@ export default {
         const connectorsCheck = await checkConnectorsAPI()
         if (connectorsCheck && connectorsCheck.enabled) {
           window.location.href = '/api/v1/login'
+        } else if (fromReset) {
+          window.location.href = '/signin'
         }
       }
     },
@@ -148,6 +170,15 @@ export default {
           this.$router.push('/v1/dashboard')
         }
       }
+    },
+    async getCaptcha () {
+      this.captcha = null
+      const res = await getCaptchaAPI()
+      if (res) {
+        this.captcha = res
+        this.loginForm.captcha_answer = ''
+        this.loginForm.captcha_id = res.id
+      }
     }
   },
   computed: {
@@ -167,7 +198,8 @@ export default {
         account: [
           { required: true, message: this.$t(`login.inputUsername`), trigger: 'change' }
         ],
-        password: [{ required: true, message: this.$t(`login.inputPass`), trigger: 'change' }]
+        password: [{ required: true, message: this.$t(`login.inputPass`), trigger: 'change' }],
+        captcha_answer: [{ required: true, message: this.$t(`login.inputCaptcha`), trigger: 'change' }]
       }
     },
     showSlogan () {
@@ -291,9 +323,16 @@ export default {
           margin-bottom: 18px;
         }
 
-        /deep/ .el-input {
-          .el-input__inner {
-            border-radius: 0.25rem;
+        .el-input {
+          /deep/.el-input-group__prepend {
+            padding: 0;
+
+            .captcha-img {
+              width: 120px;
+              height: 30px;
+              object-fit: cover;
+              cursor: pointer;
+            }
           }
         }
 

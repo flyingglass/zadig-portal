@@ -215,8 +215,8 @@ import {
   getRepoOwnerByIdAPI,
   getBranchInfoByIdAPI,
   getRepoFilesAPI,
-  createTemplateServiceAPI,
-  updateTemplateServiceAPI
+  createHelmTemplateServiceAPI,
+  updateHelmTemplateServiceAPI
 } from '@api'
 import GitFileTree from './gitFileTree'
 import GerritFileTree from '@/components/common/gitFileTree.vue'
@@ -375,7 +375,7 @@ export default {
     closeFileTree ({ successServices, failedServices }) {
       this.$store.commit('SERVICE_DIALOG_VISIBLE', false)
       if (successServices.length) {
-        this.$store.dispatch('queryService', {
+        this.$store.dispatch('getHelmServices', {
           projectName: this.$route.params.project_name,
           showServiceName: successServices[0]
         })
@@ -461,8 +461,8 @@ export default {
         }
       }
       const reqApi = this.isUpdate
-        ? updateTemplateServiceAPI
-        : createTemplateServiceAPI
+        ? updateHelmTemplateServiceAPI
+        : createHelmTemplateServiceAPI
       const res = await reqApi(projectName, payload).catch(error =>
         console.log(error)
       )
@@ -565,6 +565,7 @@ export default {
           }
           this.isUpdate = true
         } else {
+          this.closeSelectRepo()
           this.isUpdate = false
         }
       },

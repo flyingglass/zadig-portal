@@ -93,7 +93,7 @@
     <el-dialog :visible.sync="taskDialogVisible"
                :title="$t(`workflow.runProductWorkflow`)"
                custom-class="run-workflow"
-               width="60%"
+               width="70%"
                class="dialog">
       <RunWorkflow v-if="taskDialogVisible"
                     :workflowName="workflow.name"

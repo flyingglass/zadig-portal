@@ -173,7 +173,19 @@ export default {
     },
     async createFile () {
       if (this.fileContentChange) {
-        this.askSaveYamlConfig()
+        this.askSaveYamlConfig('create').then(() => {
+          this.showNewServiceInput = true
+          this.$nextTick(() => {
+            this.$refs.serviceNamedRef.focus()
+          })
+        }).catch(action => {
+          if (action === 'cancel') {
+            this.showNewServiceInput = true
+            this.$nextTick(() => {
+              this.$refs.serviceNamedRef.focus()
+            })
+          }
+        })
       } else {
         this.showNewServiceInput = true
         this.$nextTick(() => {
@@ -239,14 +251,14 @@ export default {
         })
       }
     },
-    askSaveYamlConfig (switchNode = false) {
+    askSaveYamlConfig (operation = 'switchNode') {
       return this.$confirm(this.$t('templates.k8sYaml.confirmToSaveTemplate'), this.$t('templates.k8sYaml.tip'), {
         distinguishCancelAndClose: true,
         confirmButtonText: this.$t(`global.confirm`),
         cancelButtonText: this.$t(`global.cancel`),
         type: 'warning'
       }).then(() => {
-        this.$emit('updateFile', switchNode)
+        this.$emit('updateFile', operation)
       })
     },
     selectFile (data, node, current) {
@@ -255,7 +267,7 @@ export default {
       if (this.previousNodeKey && this.previousNodeKey !== levelOneNodeLabel && this.fileContentChange) {
         // Switch to current node
         this.setFileSelected(this.previousNodeKey)
-        this.askSaveYamlConfig(true).then(() => {
+        this.askSaveYamlConfig('switchNode').then(() => {
           this.justStoreSwitchNode = { data, node, levelOneNodeLabel }
         }).catch(action => {
           if (action === 'cancel') {

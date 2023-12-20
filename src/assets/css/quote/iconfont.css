@@ -16,6 +16,62 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.iconjenkins:before {
+  content: "\f1d9";
+}
+
+.iconapproval:before {
+  content: "\e6ce";
+}
+
+.iconai:before {
+  content: "\ec5f";
+}
+
+.iconopenai:before {
+  content: "\e6cc";
+}
+
+.iconliebiao:before {
+  content: "\e6cb";
+}
+
+.iconpersonalview:before {
+  content: "\e6c9";
+}
+
+.icondashboard:before {
+  content: "\e7a5";
+}
+
+.iconjfrog:before {
+  content: "\e6c8";
+}
+
+.iconfeishu-xin_new-lark:before {
+  content: "\e6c6";
+}
+
+.iconmac:before {
+  content: "\e6c3";
+}
+
+.iconwindows-fill:before {
+  content: "\e882";
+}
+
+.iconlinux:before {
+  content: "\e6c5";
+}
+
+.iconjira:before {
+  content: "\e7bc";
+}
+
+.icontongyonggongju:before {
+  content: "\e6bf";
+}
+
 .iconinvisible:before {
   content: "\e7d1";
 }

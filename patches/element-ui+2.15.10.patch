@@ -1,7 +1,16 @@
 diff --git a/node_modules/element-ui/lib/element-ui.common.js b/node_modules/element-ui/lib/element-ui.common.js
-index a00af60..481c669 100644
+index a00af60..d593080 100644
 --- a/node_modules/element-ui/lib/element-ui.common.js
 +++ b/node_modules/element-ui/lib/element-ui.common.js
+@@ -1373,7 +1373,7 @@ var emitter_default = /*#__PURE__*/__webpack_require__.n(emitter_);
+ 
+     closeOnClickModal: {
+       type: Boolean,
+-      default: true
++      default: false
+     },
+ 
+     closeOnPressEscape: {
 @@ -7507,9 +7507,10 @@ var selectvue_type_template_id_0e4aade6_render = function() {
                      directives: [
                        {

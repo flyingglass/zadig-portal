@@ -20,8 +20,7 @@ import projectPermission from './modules/projectPermission'
 import sidebarStatus from './modules/sidebarStatus'
 
 // Service
-import serviceManage from './modules/serviceManage'
-import k8sService from './modules/k8sService'
+import serviceHelm from './modules/serviceHelm'
 
 // External Link
 import externalLink from './modules/externalLink'
@@ -30,7 +29,7 @@ import externalLink from './modules/externalLink'
 import customWorkflow from './modules/customWorkflow'
 
 // Preference
-import theme from './modules/theme'
+import preference from './modules/preference'
 
 Vue.use(Vuex)
 
@@ -44,11 +43,10 @@ export default new Vuex.Store({
     globalPermission,
     projectPermission,
     sidebarStatus,
-    serviceManage,
-    k8sService,
+    serviceHelm,
     externalLink,
     customWorkflow,
-    theme
+    preference
   },
   strict: debug
 })

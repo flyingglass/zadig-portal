@@ -34,7 +34,7 @@ export default {
       let wsLink = false
       const hostname = this.getLogWSUrl()
       const token = store.get('userInfo').token
-      const url = `/api/podexec/${this.projectName}/${this.namespace}/${this.podName}/${this.containerName}/podExec/${this.envName}?projectName=${this.projectName}&clusterId=${this.clusterId}&token=${token}`
+      const url = `/api/podexec/${this.projectName}/${this.podName}/${this.containerName}/podExec/${this.envName}?projectName=${this.projectName}&token=${token}`
       this.ws = new WebSocket(hostname + url)
 
       this.$nextTick(() => {
@@ -42,7 +42,7 @@ export default {
           fontSize: '12',
           fontFamily: 'Monaco,Consolas,monospace',
           scrollback: 9999999,
-          theme: this.$store.state.theme.xtermTheme
+          theme: this.$store.state.preference.xtermTheme
         })
         const fitAddon = new FitAddon()
         this.term.loadAddon(fitAddon)
@@ -122,15 +122,6 @@ export default {
     envName: {
       required: true,
       type: String
-    },
-    namespace: {
-      required: true,
-      type: String
-    },
-    clusterId: {
-      required: false,
-      type: String,
-      default: ''
     }
   },
   mounted () {

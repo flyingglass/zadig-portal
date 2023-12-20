@@ -47,9 +47,9 @@ export default {
   },
   methods: {
     async getProjects () {
-      const projects = await getProjectsAPI()
+      const res = await getProjectsAPI(1, 9999)
       this.projects = orderBy(
-        projects.filter(project => {
+        res.projects.filter(project => {
           return !project.onboard
         }),
         'name'

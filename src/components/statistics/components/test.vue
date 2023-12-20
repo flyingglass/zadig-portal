@@ -1,6 +1,6 @@
 <template>
   <div class="auto-test">
-    <span class="title">{{$t('dataStatistics.overview.deployAutomation')}}</span>
+    <span class="title">{{$t('dataStatistics.overview.testAutomation')}}</span>
     <div class="auto-test-chart-container">
       <el-row :gutter="10">
         <el-col class="number-block" :span="6">

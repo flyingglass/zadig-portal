@@ -8,7 +8,7 @@
             <el-tooltip effect="dark"
                         :content="$t(`templates.build.createTemplate`)"
                         placement="top">
-              <el-button v-hasPermi="{type: 'system', action: 'create_template',isBtn:true}"
+              <el-button v-hasPermi="{type: 'system', action: 'create_template'}"
                          size="mini"
                          icon="el-icon-plus"
                          @click="createFile"

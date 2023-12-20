@@ -54,19 +54,19 @@
         <span slot="label">
           <span>{{$t(`workflow.specifyMembersTip1`)}}：</span>
         </span>
-        <el-input style="width: 350px;" type="textarea" :rows="3" :placeholder="$t(`workflow.specifyMembersTip1`)" v-model="mobileStr"></el-input>
+        <el-input style="width: 350px;" type="textarea" :rows="3" placeholder="13012340000;15812340000" v-model="mobileStr"></el-input>
       </el-form-item>
       <el-form-item v-if="notify.webhook_type==='wechat'" prop="wechat_user_ids">
         <span slot="label">
           <span>{{$t(`workflow.specifyMembersTip2`)}}：</span>
         </span>
-        <el-input style="width: 350px;" type="textarea" :rows="3" :placeholder="$t(`workflow.specifyMembersTip2`)" v-model="wechatMobileStr"></el-input>
+        <el-input style="width: 350px;" type="textarea" :rows="3" placeholder="user_id_demo1;user_id_demo2" v-model="wechatMobileStr"></el-input>
       </el-form-item>
       <el-form-item v-if="notify.webhook_type==='feishu'" prop="lark_user_ids">
         <span slot="label">
           <span>{{$t(`workflow.specifyMembersTip3`)}}：</span>
         </span>
-        <el-input style="width: 350px;" type="textarea" :rows="3" :placeholder="$t(`workflow.specifyMembersTip3`)" v-model="feishuMobileStr"></el-input>
+        <el-input style="width: 350px;" type="textarea" :rows="3" placeholder="lark_user_id_demo1;lark_user_id_demo2" v-model="feishuMobileStr"></el-input>
       </el-form-item>
       <el-form-item prop="notify_type" :label="$t(`workflow.notifyEvents`)">
         <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="handleCheckAllChange">全选</el-checkbox>
@@ -192,12 +192,11 @@ export default {
       },
       set: function (newValue) {
         if (newValue === '') {
-          this.$set(this.notify, 'is_at_all', true)
           this.$set(this.notify, 'lark_user_ids', [])
         } else {
-          this.$set(this.notify, 'is_at_all', false)
           this.$set(this.notify, 'lark_user_ids', newValue.split(';'))
         }
+        this.$set(this.notify, 'is_at_all', newValue.split(';').includes('All'))
       }
     },
     mobileStr: {
@@ -210,12 +209,11 @@ export default {
       },
       set: function (newValue) {
         if (newValue === '') {
-          this.$set(this.notify, 'is_at_all', true)
           this.$set(this.notify, 'at_mobiles', [])
         } else {
-          this.$set(this.notify, 'is_at_all', false)
           this.$set(this.notify, 'at_mobiles', newValue.split(';'))
         }
+        this.$set(this.notify, 'is_at_all', newValue.split(';').includes('All'))
       }
     }
   },
@@ -239,6 +237,10 @@ export default {
     },
     clearForm () {
       this.$refs.ruleForm.clearValidate()
+      this.$set(this.notify, 'is_at_all', false)
+      this.wechatMobileStr = ''
+      this.feishuMobileStr = ''
+      this.mobileStr = ''
     }
   }
 }

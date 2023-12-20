@@ -41,7 +41,6 @@
           <el-input v-model="mailHostEdit.password"
                     placeholder="请输入新密码"
                     autofocus
-                    show-password
                     type="password"
                     auto-complete="off"></el-input>
         </el-form-item>
@@ -130,7 +129,6 @@
           <el-input v-model="mailHostAdd.password"
                     placeholder="密码"
                     autofocus
-                    show-password
                     type="password"
                     auto-complete="off"></el-input>
         </el-form-item>

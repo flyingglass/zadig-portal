@@ -23,7 +23,7 @@ export default {
   methods: {
     closeCurrentPage (item, index) {
       if (item.isUpdate) {
-        this.$confirm('检测到未保存的内容，是否在离开页面前保存修改？或者使用command+s保存修改', '提示', {
+        this.$confirm('检测到未保存的内容，是否在离开页面前保存修改？或者使用 command+s 保存修改', '提示', {
           distinguishCancelAndClose: true,
           confirmButtonText: this.$t(`global.save`),
           cancelButtonText: '放弃修改',

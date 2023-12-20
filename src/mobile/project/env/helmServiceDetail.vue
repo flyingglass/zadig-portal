@@ -256,9 +256,6 @@ export default {
     projectName () {
       return this.$route.params.project_name
     },
-    originProjectName () {
-      return this.$route.query.originProjectName
-    },
     serviceName () {
       return this.$route.params.service_name
     },
@@ -269,10 +266,7 @@ export default {
       return this.$route.query.workLoadType
     },
     namespace () {
-      return this.$route.query.namespace
-    },
-    isProd () {
-      return this.$route.query.isProd === 'true'
+      return this.currentService.namespace
     },
     allHosts () {
       if (this.currentService.ingress) {
@@ -321,7 +315,7 @@ export default {
       const serviceName = this.serviceName
       const workLoadType = this.workLoadType
       const envName = this.envName ? this.envName : ''
-      const envType = this.isProd ? 'prod' : ''
+      const envType = ''
       getServiceInfo(
         projectName,
         serviceName,
@@ -392,7 +386,7 @@ export default {
       const projectName = this.projectName
       const podName = pod.name
       const envName = this.envName ? this.envName : ''
-      const envType = this.isProd ? 'prod' : ''
+      const envType = ''
       this.eventsModal.visible = true
       podEventAPI(projectName, podName, envName, envType).then(res => {
         this.eventsModal.data = res.map(row => {

@@ -4,93 +4,92 @@
       <el-table-column :label="$t(`global.repository`)">
         <template slot-scope="scope">
           <el-row v-for="build of scope.row.spec.repos" class="build-row" :key="build.code_host_id">
-            <template>
+            <template v-if="(!build.hidden || build.showTip) && build.source_from !== 'param'">
+            <el-col :span="8">
+              <div class="repo-name-container">
+                <el-tooltip class="item" effect="dark" :content="build.repo_name" placement="top">
+                  <div :class="{'repo-name': true}">{{ build.repo_name }}</div>
+                </el-tooltip>
+              </div>
+            </el-col>
+            <template v-if="build.showTip">
               <el-col :span="7">
-                <div class="repo-name-container">
-                  <el-tooltip class="item" effect="dark" :content="build.repo_name" placement="top">
-                    <span :class="{'repo-name': true}">{{$utils.tailCut(build.repo_name,20) }}</span>
-                  </el-tooltip>
-                </div>
+                <span style="color: #909399; font-size: 12px; line-height: 33px;">{{$t(`workflow.executeWithChangedCode`)}}</span>
               </el-col>
-              <div v-if="build.showTip">
-                <el-col :span="7">
-                  <span style="color: #909399; font-size: 12px; line-height: 33px;">{{$t(`workflow.executeWithChangedCode`)}}</span>
-                </el-col>
-              </div>
-              <div v-else>
-                <el-col :span="7">
-                  <el-select
-                    v-model="build.branchOrTag"
-                    remote
-                    :remote-method="(query)=>{searchRepoInfo(build,query)}"
-                    @clear="searchRepoInfo(build,'')"
-                    filterable
-                    clearable
-                    size="small"
-                    value-key="id"
-                    :placeholder="build.source==='other'? $t(`repository.prompt.inputBranchOrTag`) : $t(`repository.prompt.chooseBranchOrTag`) "
-                    @change="changeBranchOrTag(build)"
+            </template>
+            <template v-else>
+              <el-col :span="7">
+                <el-select
+                  v-model="build.branchOrTag"
+                  remote
+                  :remote-method="(query)=>{searchRepoInfo(build,query)}"
+                  @clear="searchRepoInfo(build,'')"
+                  filterable
+                  clearable
+                  size="small"
+                  value-key="id"
+                  :placeholder="build.source==='other'? $t(`repository.prompt.inputBranchOrTag`) : $t(`repository.prompt.chooseBranchOrTag`) "
+                  @change="changeBranchOrTag(build)"
+                >
+                  <el-option-group v-for="group in build.branchAndTagList" :key="group.label" :label="group.label">
+                    <el-option v-for="(item, index) in group.options" :key="index" :label="item.name" :value="item">
+                      <span v-if="item.id.startsWith('addTag')||item.id.startsWith('addBranch')">{{`${$t('repository.prompt.usePRorTagTemplate')}"${item.name}"`}}</span>
+                      <span v-else>{{item.name}}</span>
+                    </el-option>
+                  </el-option-group>
+                </el-select>
+              </el-col>
+              <el-col :span="7" style="margin-left: 10px;" v-if="build.source!=='other'">
+                <el-select
+                  v-if="!$utils.isEmpty(build.branchPRsMap)"
+                  v-model="build.prs"
+                  multiple
+                  size="small"
+                  :placeholder="$t(`repository.prompt.choosePR`)"
+                  filterable
+                  clearable
+                  :disabled="build.branchOrTag && build.branchOrTag.type === 'tag'"
+                >
+                  <el-tooltip
+                    v-for="item in build.branchPRsMap[build.branchOrTag ? build.branchOrTag.name : '']"
+                    :key="item[build.prNumberPropName]"
+                    placement="left"
+                    popper-class="gray-popper"
                   >
-                    <el-option-group v-for="group in build.branchAndTagList" :key="group.label" :label="group.label">
-                      <el-option v-for="(item, index) in group.options" :key="index" :label="item.name" :value="item">
-                        <span v-if="item.id.startsWith('addTag')||item.id.startsWith('addBranch')">{{`${$t('repository.prompt.usePRorTagTemplate')}"${item.name}"`}}</span>
-                        <span v-else>{{item.name}}</span>
-                      </el-option>
-                    </el-option-group>
-                  </el-select>
-                </el-col>
-                <el-col :span="7" :offset="1" v-if="build.source!=='other'">
-                  <el-select
-                    v-if="!$utils.isEmpty(build.branchPRsMap)"
+                    <div slot="content">
+                      {{`${$t('repository.info.creatorTemplate')}${$utils.tailCut(item.authorUsername,10)}`}}
+                      <br />
+                      {{`${$t('repository.info.creationTimeTemplate')}${$utils.convertTimestamp(item.createdAt)}`}}
+                      <br />
+                      {{`${$t('repository.info.sourceBranchTemplate')}${item.sourceBranch}`}}
+                      <br />
+                      {{`${$t('repository.info.targetBranchTemplate')}${item.targetBranch}`}}
+                    </div>
+                    <el-option :label="`#${item[build.prNumberPropName]} ${item.title}`" :value="item[build.prNumberPropName]"></el-option>
+                  </el-tooltip>
+                </el-select>
+                <el-tooltip v-else :content="$t(`repository.prompt.prDoesNotExist`)" placement="top" popper-class="gray-popper">
+                  <el-input
                     v-model="build.prs"
-                    multiple
+                    class="short-input"
                     size="small"
-                    :placeholder="$t(`repository.prompt.choosePR`)"
-                    filterable
-                    clearable
+                    :placeholder="$t(`repository.prompt.inputPR`)"
                     :disabled="build.branchOrTag && build.branchOrTag.type === 'tag'"
-                  >
-                    <el-tooltip
-                      v-for="item in build.branchPRsMap[build.branchOrTag ? build.branchOrTag.name : '']"
-                      :key="item[build.prNumberPropName]"
-                      placement="left"
-                      popper-class="gray-popper"
-                    >
-                      <div slot="content">
-                        {{`${$t('repository.info.creatorTemplate')}${$utils.tailCut(item.authorUsername,10)}`}}
-                        <br />
-                        {{`${$t('repository.info.creationTimeTemplate')}${$utils.convertTimestamp(item.createdAt)}`}}
-                        <br />
-                        {{`${$t('repository.info.sourceBranchTemplate')}${item.sourceBranch}`}}
-                        <br />
-                        {{`${$t('repository.info.targetBranchTemplate')}${item.targetBranch}`}}
-                      </div>
-                      <el-option :label="`#${item[build.prNumberPropName]} ${item.title}`" :value="item[build.prNumberPropName]"></el-option>
-                    </el-tooltip>
-                  </el-select>
-                  <el-tooltip v-else :content="$t(`repository.prompt.prDoesNotExist`)" placement="top" popper-class="gray-popper">
-                    <el-input
-                      v-model="build.prs"
-                      class="short-input"
-                      size="small"
-                      :placeholder="$t(`repository.prompt.inputPR`)"
-                      :disabled="build.branchOrTag && build.branchOrTag.type === 'tag'"
-                    ></el-input>
-                  </el-tooltip>
-                </el-col>
-
-                <el-col :span="1">
-                  <el-tooltip v-if="build.errorMsg" class="item" effect="dark" :content="build.errorMsg" placement="top">
-                    <i class="el-icon-question repo-warning"></i>
-                  </el-tooltip>
-                </el-col>
-              </div>
+                  ></el-input>
+                </el-tooltip>
+              </el-col>
+              <el-col :span="1">
+                <el-tooltip v-if="build.errorMsg" class="item" effect="dark" :content="build.errorMsg" placement="top">
+                  <i class="el-icon-question repo-warning"></i>
+                </el-tooltip>
+              </el-col>
+            </template>
             </template>
           </el-row>
         </template>
       </el-table-column>
     </el-table>
-    <div class="font-gray" v-if="type==='plugin'?!job.isShowPlugin:!job.isShowCommon">{{$t(`workflow.noNeedToEnterVariables`)}}</div>
+    <div class="font-gray" v-if="type==='plugin' && !job.isShowPlugin">{{$t(`workflow.noNeedToEnterVariables`)}}</div>
     <el-table
       v-if="type==='plugin'?job.isShowPlugin:job.isShowCommon"
       :data="type === 'plugin' ? job.spec.plugin.inputs.filter(item=>item.isShow) : job.spec.properties.envs.filter(item=>item.isShow)"
@@ -124,6 +123,7 @@
 </template>
 
 <script>
+// used for freestyle and plugins now
 import { getAllBranchInfoAPI } from '@api'
 export default {
   props: {
@@ -235,7 +235,9 @@ export default {
             if (item.type === 'git' && item.spec.repos.length > 0) {
               this.repoList.push(item)
               item.spec.repos.forEach(build => {
-                this.searchRepoInfo(build, '')
+                if (build.source_from !== 'param') {
+                  this.searchRepoInfo(build, '')
+                }
               })
             }
           })
@@ -254,6 +256,13 @@ export default {
   .password {
     /deep/.el-input__suffix {
       display: none !important;
+    }
+  }
+
+  /deep/ .el-input,
+  /deep/ .el-select {
+    &.full-width {
+      width: 40%;
     }
   }
 

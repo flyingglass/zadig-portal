@@ -76,7 +76,7 @@ export default {
           {
             type: 'string',
             required: true,
-            message: this.$t(`signUp.inputPass`),
+            validator: this.$utils.validatePassword(),
             trigger: 'blur'
           }
         ]

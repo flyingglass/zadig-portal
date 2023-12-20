@@ -33,7 +33,7 @@
           </li>
         </ul>
       </div>
-      <div class="controls__wrap">
+      <div class="controls__wrap" v-if="!hideSave||!isOnboarding">
         <div class="controls__right">
           <el-button v-hasPermi="{projectName: projectName, actions:['edit_service','create_service'],operator:'or',isBtn:true}" v-if="!hideSave" type="primary" size="small" :disabled="disabledSave || !yamlChange" @click="updateService">{{$t(`global.save`)}}</el-button>
           <el-button v-hasPermi="{projectName: projectName, action:'manage_environment',isBtn:true}" v-if="!isOnboarding" type="primary" size="small" :disabled="!showJoinToEnvBtn" @click="showJoinToEnvDialog">{{$t('services.common.addToEnv')}}</el-button>
@@ -61,8 +61,8 @@ import 'codemirror/addon/search/searchcursor.js'
 import 'codemirror/addon/search/search.js'
 import {
   validateYamlAPI,
-  serviceTemplateAPI,
-  saveServiceTemplateAPI
+  getServiceDetailAPI,
+  saveServiceAPI
 } from '@api'
 export default {
   props: {
@@ -123,13 +123,13 @@ export default {
       this.initYaml = newYaml
       this.$emit('update:yamlChange', this.initYaml !== this.service.yaml)
     },
-    getService (val) {
+    async getService (val) {
       const serviceName = val ? val.service_name : this.serviceName
       const projectName = val.product_name
       const serviceType = val.type
       this.service.yaml = ''
       if (val && serviceType) {
-        serviceTemplateAPI(serviceName, serviceType, projectName).then(res => {
+        await getServiceDetailAPI(serviceName, serviceType, projectName).then(res => {
           this.service = res
           // emit template id to tree
           if (res.template_id) {
@@ -157,10 +157,8 @@ export default {
         : 'private'
       const yaml = this.service.yaml
       const variableYaml = this.serviceWithConfigs.variable_yaml
-      const serviceVars = this.serviceWithConfigs.variable_kvs
-        ? this.serviceWithConfigs.variable_kvs.filter((item) => {
-          return item.show
-        }).map((varItem) => { return varItem.key })
+      const serviceVariableKvs = this.serviceWithConfigs.service_variable_kvs
+        ? this.serviceWithConfigs.service_variable_kvs
         : []
       const isEdit = this.serviceInTree.status === 'added'
       const payload = isEdit
@@ -172,7 +170,7 @@ export default {
           yaml: yaml,
           source: 'spock',
           variable_yaml: variableYaml,
-          service_vars: serviceVars
+          service_variable_kvs: serviceVariableKvs
         }
         : {
           product_name: projectName,
@@ -180,9 +178,11 @@ export default {
           visibility: visibility,
           type: 'k8s',
           yaml: yaml,
-          source: 'spock'
+          source: 'spock',
+          variable_yaml: '',
+          service_variable_kvs: []
         }
-      return saveServiceTemplateAPI(isEdit, payload).then(res => {
+      return saveServiceAPI(isEdit, payload).then(res => {
         this.$message({
           type: 'success',
           message: `服务 ${payload.service_name} 保存成功`
@@ -290,7 +290,7 @@ export default {
   },
   watch: {
     serviceInTree: {
-      handler (val, old_val) {
+      async handler (val, old_val) {
         if (
           val.visibility === 'public' &&
           val.product_name !== this.projectName
@@ -313,7 +313,11 @@ export default {
           }
         }
         if (val.status === 'added') {
-          this.getService(val)
+          if (val.source === 'template') {
+            await this.getService(val)
+          } else {
+            this.getService(val)
+          }
           if (
             val.source === 'gitlab' ||
             val.source === 'gerrit' ||

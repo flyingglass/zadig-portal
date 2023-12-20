@@ -92,7 +92,7 @@ export default {
   }
 }
 </script>
-<style lang="less">
+<style lang="less" scoped>
 .aside__wrap {
   position: relative;
   display: flex;

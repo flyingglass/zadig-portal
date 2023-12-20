@@ -149,7 +149,7 @@ export default {
             sse.subscribe('', data => {
               this.hasNewTestMsg = true
               this.wsLogDataBuffer = this.wsLogDataBuffer.concat(
-                Object.freeze(data + '\n')
+                Object.freeze(data)
               )
             })
           })
@@ -177,7 +177,7 @@ export default {
       const projectName = this.projectName
       getScannerTaskLogAPI(scannerId, taskId, projectName).then(response => {
         this.scannerTaskLogs = response.split('\n').map(element => {
-          return element + '\n'
+          return element
         })
       })
     }

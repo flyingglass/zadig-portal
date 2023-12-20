@@ -135,12 +135,23 @@
               :handledEnv="activeName"
               :envScene="`createEnv`"
             />
-            <div class="ai-bottom">
-              <el-button type="primary" size="small" @click="createHelmProductEnv" :loading="isCreating" :disabled="!cantNext">{{$t('environments.common.envCreation')}}</el-button>
-              <div v-for="(env, index) in createRes" :key="index" class="ai-status">
-                <span class="env-name">{{env.name}}:</span>
-                <span>{{getStatusDesc(env)}}</span>
-              </div>
+            <div class="env-creation-info">
+              <el-table  v-if="createRes.length > 0" :data="createRes" style="width: 100%;">
+                <el-table-column :label="$t('environments.common.envName')">
+                  <template slot-scope="scope">
+                    <span>{{scope.row.name}}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column :label="$t('global.status')">
+                  <template slot-scope="scope">
+                    <span v-if="scope.row.status === 'creating'" class="el-icon-loading loader"></span>
+                    <el-tag v-else-if="scope.row.status === 'success'" type="success" size="mini" effect="plain">{{getStatusDesc(scope.row)}}</el-tag>
+                    <el-tag v-else-if="scope.row.status === 'failed'" type="danger" size="mini" effect="plain">{{getStatusDesc(scope.row)}}</el-tag>
+                    <el-tag v-else-if="scope.row.status === 'Unstable'" type="warning" size="mini" effect="plain">{{getStatusDesc(scope.row)}}</el-tag>
+                  </template>
+                </el-table-column>
+              </el-table>
+              <el-button type="primary" size="small" @click="createHelmProductEnv" :loading="isCreating" :disabled="!cantNext" class="env-creation-btn">{{$t('environments.common.envCreation')}}</el-button>
             </div>
           </div>
         </div>
@@ -156,8 +167,8 @@
   </div>
 </template>
 <script>
-import HelmEnvTemplate from '@/components/projects/env/env_detail/components/updateHelmEnvTemp.vue'
-import EnvConfig from '@/components/projects/env/env_detail/common/envConfig.vue'
+import HelmEnvTemplate from '@/components/projects/env/helm/common/updateHelmEnvTemp.vue'
+import EnvConfig from '@/components/projects/env/common/envConfig.vue'
 import bus from '@utils/eventBus'
 import Step from '../common/step.vue'
 import { cloneDeep } from 'lodash'
@@ -525,10 +536,6 @@ export default {
         .second {
           color: #4c4c4c;
           font-size: 13px;
-
-          &.gray {
-            color: @disabledColor;
-          }
         }
       }
 
@@ -611,18 +618,15 @@ export default {
           }
         }
 
-        .ai-bottom {
-          margin-top: 10px;
+        .env-creation-info {
+          margin: 10px 0;
 
-          .ai-status {
-            margin: 8px 0;
-            font-size: 13px;
+          .loader {
+            color: @themeColor;
+          }
 
-            .env-name {
-              display: inline-block;
-              margin-right: 8px;
-              color: #e6a23c;
-            }
+          .env-creation-btn {
+            margin: 10px 0;
           }
         }
       }

@@ -33,9 +33,9 @@ const mutations = {
 
 const actions = {
   async getProjectList ({ commit, state, rootGetters }) {
-    return await getProjectsAPI().then(
+    return await getProjectsAPI(1, 9999).then(
       (res) => {
-        const result = orderBy(res, 'name')
+        const result = orderBy(res.projects, 'name')
         commit(types.SET_PROJECT_LIST, result)
       }
     )

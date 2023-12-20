@@ -1,31 +1,35 @@
 <template>
-  <el-dialog class="form" :title="$t('project.rbac.addRole')" :visible.sync="dialogRoleAddFormVisible">
+  <el-dialog class="form" :title="$t('project.rbac.addRole')" :visible.sync="dialogRoleAddFormVisible" width="62%">
     <el-form ref="form" :model="form" :rules="formRules" label-position="left">
-      <el-form-item :label="$t('project.rbac.roleName')" prop="name" label-width="130px">
+      <el-form-item :label="$t('project.rbac.roleName')" prop="name" label-width="100px">
         <el-input size="small" :disabled="isEdit" v-model="form.name"  :placeholder="$t('project.rbac.inputRoleName')"></el-input>
       </el-form-item>
-      <el-form-item :label="$t('project.rbac.permissionList')" prop="permissions" label-width="130px">
-        <div class="permissions-group" v-for="(group,group_index) in permissionGroups" :key="group_index">
-          <el-checkbox
-            :label="group.resource"
-            :key="group.resource"
-            :value="calculatePermissionGroupsCheckedState(group.rules)"
-             @change="handlePermissionGroupChange(group.rules)"
-            :indeterminate="isIndeterminate(group.resource,group.rules)"
-          >{{group.alias}}</el-checkbox>
-          <div class="sub-permissions">
-            <el-checkbox-group v-model="form.permissions">
-              <div>
+      <el-form-item :label="$t('project.rbac.permissionList')" prop="permissions" label-width="100px">
+        <el-table :data="permissionGroups" border style="line-height: 1.2;">
+          <el-table-column label="操作对象" prop="alias" width="95px"></el-table-column>
+          <el-table-column label="权限项">
+            <template slot-scope="{ row }">
+              <el-checkbox-group v-model="form.permissions">
                 <el-checkbox
                   class="sub-permissions-checkbox"
-                  v-for="(subPermission,sub_index) in   group.rules"
+                  v-for="(subPermission,sub_index) in  row.rules"
                   :key="sub_index"
                   :label="subPermission. uniqueAction"
                 >{{subPermission.alias}}</el-checkbox>
-              </div>
-            </el-checkbox-group>
-          </div>
-        </div>
+              </el-checkbox-group>
+            </template>
+          </el-table-column>
+          <el-table-column  width="36px">
+            <template slot-scope="{ row }">
+              <el-checkbox
+                :key="row.resource"
+                :value="calculatePermissionGroupsCheckedState(row.rules)"
+                @change="handlePermissionGroupChange(row.rules)"
+                :indeterminate="isIndeterminate(row.resource,row.rules)"
+              ></el-checkbox>
+            </template>
+          </el-table-column>
+        </el-table>
       </el-form-item>
     </el-form>
     <div slot="footer" class="dialog-footer">
@@ -35,7 +39,7 @@
   </el-dialog>
 </template>
 <script>
-import { queryPolicyDefinitionsAPI, addRoleAPI, queryRoleDetailAPI, queryPublicRoleDetailAPI, updateRoleAPI, updatePublicRoleAPI, addPublicRoleAPI } from '@/api'
+import { queryPolicyDefinitionsAPI, addRoleAPI, queryRoleDetailAPI, queryPublicRoleDetailAPI, updateRoleAPI, updatePublicRoleAPI, addPublicRoleAPI } from '@api'
 import _ from 'lodash'
 
 const initFormData = {
@@ -159,7 +163,7 @@ export default {
       const res = await queryPolicyDefinitionsAPI(projectName, 'project', projectType).catch(error => console.log(error))
       if (res) {
         const filterRes = res.filter((item) => {
-          return item.resource !== 'Delivery'
+          return item.resource !== 'Delivery' && item.resource !== 'ProductionService' && item.resource_key !== 'ProductionEnvironment'
         })
         filterRes.forEach(group => {
           group.rules.forEach(item => {

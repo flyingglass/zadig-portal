@@ -2,7 +2,7 @@
   <AddHostEnv ref="addHostEnv" class="content" />
 </template>
 <script>
-import AddHostEnv from '../../../common/hosting/addHostEnv.vue'
+import AddHostEnv from '@/components/projects/env/host/detail/addHostEnv.vue'
 export default {
   name: 'hostEnvConfig',
   components: {

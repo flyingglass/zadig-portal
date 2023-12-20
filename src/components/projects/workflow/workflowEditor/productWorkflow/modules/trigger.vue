@@ -11,6 +11,19 @@
       center
     >
     <div class="trigger-mode">
+      <el-tooltip effect="dark" placement="top">
+        <div slot="content">
+          {{$t(`global.enterprisefeaturesReferforDetails`)}}
+          <el-link
+            style="font-size: 13px; vertical-align: baseline;"
+            type="primary"
+            :href="`https://docs.koderover.com/zadig/ZadigX%20v1.6.0/project/workflow-trigger/#git-触发器`"
+            :underline="false"
+            target="_blank"
+          >{{$t(`global.document`)}}</el-link>
+        </div>
+        <el-button type="text">手动创建 Webhook</el-button>
+      </el-tooltip>
       <el-button type="text" @click="switchMode">{{ webhookSwap.is_yaml ? 'GUI 方式' : 'YAML 方式' }}</el-button>
       <a
         href="https://docs.koderover.com/zadig/project/workflow/#yaml-方式"
@@ -150,7 +163,13 @@
           </el-form-item>
           <el-form-item v-else-if="webhookSwap.repo.source!=='gerrit'" :label="$t(`workflow.triggerEvents`)" prop="events">
             <el-checkbox-group v-model="webhookSwap.events">
-              <el-checkbox v-for="tri in triggerMethods.git" :key="tri.value" :label="tri.value">{{ tri.label }}</el-checkbox>
+              <el-checkbox v-for="tri in triggerMethods.git" :key="tri.value" :label="tri.value">{{ tri.label }}
+                <span v-if="tri.value === 'tag'">
+                  <el-tooltip  effect="dark" content="基于任一分支新建的 Tag 均会触发执行" placement="top">
+                    <i class="el-icon-warning" style="color: #666;"></i>
+                  </el-tooltip>
+                </span>
+              </el-checkbox>
             </el-checkbox-group>
           </el-form-item>
           <el-form-item :label="$t(`workflow.triggerStrategy`)">
@@ -802,7 +821,7 @@ export default {
     },
     getProjectEnvs () {
       listProductAPI(this.projectName).then(res => {
-        this.projectEnvs = res
+        this.projectEnvs = res.filter(re => !re.production)
       })
     },
     getBranchInfoById (id, repo_owner, repo_name) {

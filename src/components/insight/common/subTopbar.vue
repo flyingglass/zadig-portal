@@ -13,7 +13,7 @@
       </div>
     </div>
     <div class="operation">
-      <el-select v-model="selectedProjects" @change="changeProject" size="small" collapse-tags multiple :placeholder="$t('dataStatistics.insight.selectProject')">
+      <el-select v-model="selectedProjects" @change="changeProject" size="small" collapse-tags multiple filterable :placeholder="$t('dataStatistics.insight.selectProject')">
         <el-option v-for="item in projects" :key="item.name" :label="item.alias" :value="item.name"></el-option>
       </el-select>
       <el-date-picker
@@ -88,36 +88,45 @@ export default {
         ]
       }
     },
+    projectsInQuery () {
+      return this.$route.query.projectNames ? this.$route.query.projectNames : ''
+    },
     routerList () {
       return [
         {
           name: this.$t('dataStatistics.insight.buildInsight'),
           icon: 'iconfont icongongzuoliucheng',
-          url: `/v1/insight/build`
+          url: `/v1/insight/build?projectNames=${this.projectsInQuery}`
         },
         {
           name: this.$t('dataStatistics.insight.testInsight'),
           icon: 'iconfont iconvery-testing',
-          url: `/v1/insight/test`
+          url: `/v1/insight/test?projectNames=${this.projectsInQuery}`
         },
         {
           name: this.$t('dataStatistics.insight.deployInsight'),
           icon: 'iconfont iconvery-environ',
-          url: `/v1/insight/service`
+          url: `/v1/insight/service?projectNames=${this.projectsInQuery}`
         }
       ]
     }
   },
   methods: {
     changeProject () {
+      this.$router.push({
+        path: this.$route.path,
+        query: {
+          projectNames: this.selectedProjects.join(',')
+        }
+      })
       this.$emit('changeProject', this.selectedProjects)
     },
     changeDuration () {
       this.$emit('changeDuration', this.selectedDuration)
     },
     getProjects () {
-      getProjectsAPI().then(res => {
-        this.projects = res
+      getProjectsAPI(1, 9999).then(res => {
+        this.projects = res.projects
       })
     }
   },

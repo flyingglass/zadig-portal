@@ -5,7 +5,7 @@
               class="service-deploy-table">
       <el-table-column prop="name"
                        :label="$t(`project.services`)"
-                       width="100px"
+                       width="150px"
                        ></el-table-column>
 
       <el-table-column :label="$t(`global.repository`)"  >
@@ -13,11 +13,11 @@
           <el-row v-for="build of scope.row.build.repos"
                   class="build-row"
                   :key="build._id_">
-            <template v-if="!build.use_default">
-              <el-col :span="7">
+            <template v-if="!build.hidden">
+              <el-col :span="8">
                 <div class="repo-name-container">
                   <el-tooltip class="item" effect="dark" :content="build.repo_name" placement="top">
-                    <span :class="{'repo-name': true}"> {{$utils.tailCut(build.repo_name,20) }}</span>
+                    <span :class="{'repo-name': true}"> {{$utils.tailCut(build.repo_name,30) }}</span>
                   </el-tooltip>
                 </div>
               </el-col>
@@ -96,7 +96,7 @@
           </el-row>
         </template>
       </el-table-column>
-      <el-table-column   width="250px">
+      <el-table-column   width="200px">
         <template slot="header">
           {{$t(`status.deploy`)}}
           <DeployIcons/>
@@ -121,7 +121,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column width="100px"
+      <el-table-column width="80px"
                        :label="$t(`global.var`)">
         <template slot-scope="scope">
           <el-popover placement="left"
@@ -279,20 +279,6 @@ export default {
         this.jenkinsBuild = value.filter(item => item.jenkins_build_args)
       },
       immediate: true
-    },
-    zadigBuild: {
-      handler (value) {
-        value.forEach((item) => {
-          item.build.repos.forEach(build => {
-            // source:other  init options data
-            if (build.source === 'other') {
-              this.searchRepoInfo(build, '')
-            } else {
-              this.searchRepoInfo(build)
-            }
-          })
-        })
-      }
     }
   },
   methods: {

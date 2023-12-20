@@ -63,7 +63,7 @@
                       :rules="{ required: true, message: `请输入 ${providerMap[registry.reg_provider].secret_key}`, trigger: ['blur'] }"
                       prop="secret_key">
           <el-input clearable
-                    type="passsword"
+                    type="password"
                     v-model="registry.secret_key"></el-input>
         </el-form-item>
       </el-form>

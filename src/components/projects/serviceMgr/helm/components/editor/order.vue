@@ -18,14 +18,13 @@
 
 <script>
 import { updateServicesOrchestrationAPI } from '@api'
-import { mapState } from 'vuex'
 
 export default {
   name: 'serviceOrder',
   computed: {
-    ...mapState({
-      services: state => state.serviceManage.services
-    }),
+    services () {
+      return this.$store.state.serviceHelm.services
+    },
     projectName () {
       return this.$route.params.project_name
     }

@@ -8,7 +8,7 @@
             <el-tooltip effect="dark"
                         :content="$t(`templates.dockerfile.createTemplate`)"
                         placement="top">
-              <el-button v-hasPermi="{type: 'system', action: 'create_template',isBtn:true}"
+              <el-button v-hasPermi="{type: 'system', action: 'create_template'}"
                          size="mini"
                          icon="el-icon-plus"
                          @click="createFile"
@@ -137,7 +137,19 @@ export default {
     },
     async createFile () {
       if (this.fileContentChange) {
-        this.askSaveYamlConfig()
+        this.askSaveYamlConfig('create').then(() => {
+          this.showNewServiceInput = true
+          this.$nextTick(() => {
+            this.$refs.serviceNamedRef.focus()
+          })
+        }).catch(action => {
+          if (action === 'cancel') {
+            this.showNewServiceInput = true
+            this.$nextTick(() => {
+              this.$refs.serviceNamedRef.focus()
+            })
+          }
+        })
       } else {
         this.showNewServiceInput = true
         this.$nextTick(() => {
@@ -202,14 +214,14 @@ export default {
         })
       }
     },
-    askSaveYamlConfig (switchNode = false) {
+    askSaveYamlConfig (operation = 'switchNode') {
       return this.$confirm(this.$t(`templates.dockerfile.confirmToSaveTemplate`), this.$t(`global.tips`), {
         distinguishCancelAndClose: true,
         confirmButtonText: this.$t(`global.save`),
         cancelButtonText: this.$t(`templates.dockerfile.deleteChange`),
         type: 'warning'
       }).then(() => {
-        this.$emit('updateFile', switchNode)
+        this.$emit('updateFile', operation)
       })
     },
     selectFile (data, node, current) {
@@ -218,7 +230,7 @@ export default {
       if (this.previousNodeKey && this.previousNodeKey !== levelOneNodeLabel && this.fileContentChange) {
         // Switch to current node
         this.setFileSelected(this.previousNodeKey)
-        this.askSaveYamlConfig(true).then(() => {
+        this.askSaveYamlConfig('switchNode').then(() => {
           this.justStoreSwitchNode = { data, node, levelOneNodeLabel }
         }).catch(action => {
           if (action === 'cancel') {

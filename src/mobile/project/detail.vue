@@ -166,7 +166,7 @@ export default {
     getEnvList () {
       const projectName = this.projectName
       listProductAPI(projectName).then(res => {
-        this.envs = res.map(element => {
+        this.envs = res.filter(re => !re.production).map(element => {
           getEnvInfoAPI(projectName, element.name).then(res => {
             element.status = res.status
           })

@@ -1,7 +1,7 @@
 <template>
   <div class="insight-home">
     <div class="header">
-      <SubTopbar @changeProject="changeProject" @changeDuration="changeDuration" />
+      <SubTopbar ref="subTopbar" @changeProject="changeProject" @changeDuration="changeDuration" />
     </div>
     <router-view :selectedProjects="selectedProjects" :selectedDuration="selectedDuration"></router-view>
   </div>
@@ -24,6 +24,13 @@ export default {
     },
     changeDuration (duration) {
       this.selectedDuration = duration
+    }
+  },
+  mounted () {
+    if (this.$route.query.projectNames !== '') {
+      const projectNames = this.$route.query.projectNames.split(',')
+      this.selectedProjects = projectNames
+      this.$refs.subTopbar.selectedProjects = projectNames
     }
   },
   components: {

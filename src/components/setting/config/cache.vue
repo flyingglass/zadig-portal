@@ -43,28 +43,16 @@
           <span
                 v-if="cleanStatus.status!=='unStart'">{{convertTimestamp(cleanStatus.update_time)}}</span>
         </div>
-        <div v-if="cleanStatus.status==='failed'"
-             class="desc">
+        <div class="desc">
           <el-row>
-            <el-col :span="1"> <span class="title">原因：</span></el-col>
+            <el-col :span="1"><span class="title">{{ cleanStatus.status==='failed' ? $t(`global.reason`) : $t(`global.info`)}}：</span></el-col>
             <el-col :span="23">
               <div v-for="(pod,index) in cleanStatus.dind_clean_infos"
-                   :key="index">
-                <span class="pod-name">{{pod.pod_name}}</span>
-                <span class="error-msg">{{pod.error_message}}</span>
-              </div>
-            </el-col>
-          </el-row>
-        </div>
-        <div v-else-if="cleanStatus.status==='success' && cleanStatus.dind_clean_infos.length > 0"
-             class="desc">
-          <el-row>
-            <el-col :span="1"> <span class="title">信息：</span></el-col>
-            <el-col :span="23">
-              <div v-for="(pod,index) in cleanStatus.dind_clean_infos"
-                   :key="index">
-                <span class="pod-name">{{pod.pod_name}}</span>
-                <span class="info-msg">{{pod.clean_info}}</span>
+                   :key="index"
+                   class="content">
+                <div class="pod-name">{{pod.pod_name}}</div>
+                <div class="error-msg" v-if="pod.error_message">{{pod.error_message}}</div>
+                <div class="info-msg" v-else-if="pod.clean_info">{{pod.clean_info}}</div>
               </div>
             </el-col>
           </el-row>
@@ -200,18 +188,26 @@ export default {
 
     .desc {
       margin-top: 10px;
-    }
 
-    span.title {
-      color: #909399;
-    }
+      .pod-name {
+        font-weight: 500;
+      }
 
-    span.error-msg {
-      color: #ff1949;
-    }
+      span.title {
+        color: #909399;
+      }
 
-    span.info-msg {
-      color: #303133;
+      .content {
+        margin-bottom: 10px;
+
+        .error-msg {
+          color: #ff1949;
+        }
+
+        .info-msg {
+          color: #303133;
+        }
+      }
     }
   }
 }

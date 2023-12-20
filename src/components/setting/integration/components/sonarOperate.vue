@@ -3,15 +3,14 @@
     :title="(isEdit ? '编辑': '新增') + ' Sonar 配置'"
     custom-class="edit-form-dialog"
     :visible.sync="dialogVisible"
-    center
+    :close-on-click-modal="false"
   >
     <el-alert
       style="margin-bottom: 10px;"
-      v-if="checkRes === 'fail'"
+      v-if="checkResult === 'fail'"
       :title="errorMessage"
       type="error"
-      :closable="false"
-      show-icon>
+      :closable="false">
     </el-alert>
     <el-form
       :model="addForm"
@@ -24,30 +23,28 @@
       <el-form-item label="访问地址" prop="server_address">
         <el-input
           v-model.trim="addForm.server_address"
-          @change="validate(checkPassword)"
           placeholder="Sonar 访问地址"
         ></el-input>
       </el-form-item>
       <el-form-item label="Token" prop="token">
         <el-input
-          @change="validate(checkPassword)"
           v-model="addForm.token"
           v-if="dialogVisible"
           :suffix-icon="showCheckIcon"
-          show-password
           type="password"
           placeholder="Sonar Token"
           class="input"
         ></el-input>
       </el-form-item>
-      <el-form-item>
-        <el-button type="primary" :disabled="checkRes!=='pass'" size="small" @click="validate(save)">{{$t(`global.save`)}}</el-button>
-      </el-form-item>
     </el-form>
+    <div slot="footer">
+      <el-button type="primary" size="small" :loading="checkLoading" @click="save">{{$t(`global.save`)}}</el-button>
+      <el-button @click="dialogVisible = false" size="small">{{$t(`global.cancel`)}}</el-button>
+    </div>
   </el-dialog>
 </template>
 <script>
-import { addSonarAPI, checkSonarConnectionAPI, editSonarAPI } from '@/api'
+import { addSonarAPI, checkSonarConnectionAPI, editSonarAPI } from '@api'
 export default {
   name: 'addSonar',
   props: {
@@ -56,7 +53,8 @@ export default {
   data () {
     return {
       dialogVisible: false,
-      checkRes: null,
+      checkResult: null,
+      checkLoading: false,
       isEdit: false,
       errorMessage: '',
       addForm: {
@@ -92,40 +90,49 @@ export default {
       if (this.isEdit) {
         this.edit()
       } else {
-        const res = await addSonarAPI(this.addForm).catch((error) =>
-          console.log(error)
-        )
-        if (res && res.message === 'success') {
-          this.$message.success('新增成功')
-          this.dialogVisible = false
-          this.getSonar()
-        }
+        this.$refs.addForm.validate(async (valid) => {
+          if (valid) {
+            this.checkLoading = true
+            const checkResult = await checkSonarConnectionAPI(this.addForm).catch((error) => {
+              this.checkResult = 'fail'
+              this.checkLoading = false
+              this.errorMessage = error.response.data.message + error.response.data.description
+            })
+            if (checkResult) {
+              const res = await addSonarAPI(this.addForm).catch((error) =>
+                console.log(error)
+              )
+              if (res && res.message === 'success') {
+                this.$message.success('新增成功')
+                this.dialogVisible = false
+                this.getSonar()
+              }
+            }
+          } else {
+            return false
+          }
+        })
       }
     },
     async edit () {
-      const res = await editSonarAPI(this.addForm).catch((error) =>
-        console.log(error)
-      )
-      if (res && res.message === 'success') {
-        this.$message.success('保存成功')
-        this.dialogVisible = false
-        this.getSonar()
-      }
-    },
-    async checkPassword () {
-      this.check = true
-      const res = await checkSonarConnectionAPI(this.addForm).catch(error => {
-        this.checkRes = 'fail'
-        this.errorMessage = error.response.data.message
-      })
-      if (res && res.message === 'success') {
-        this.checkRes = 'pass'
-      }
-    },
-    validate (fn) {
-      this.$refs.addForm.validate((valid) => {
+      this.$refs.addForm.validate(async (valid) => {
         if (valid) {
-          fn()
+          this.checkLoading = true
+          const checkResult = await checkSonarConnectionAPI(this.addForm).catch((error) => {
+            this.checkResult = 'fail'
+            this.checkLoading = false
+            this.errorMessage = error.response.data.message + error.response.data.description
+          })
+          if (checkResult) {
+            const res = await editSonarAPI(this.addForm).catch(error => {
+              this.checkLoading = false; console.log(error)
+            })
+            if (res && res.message === 'success') {
+              this.$message.success('保存成功')
+              this.dialogVisible = false
+              this.getSonar()
+            }
+          }
         } else {
           return false
         }
@@ -140,10 +147,10 @@ export default {
   },
   computed: {
     showCheckIcon () {
-      if (this.checkRes === 'pass') {
-        return 'el-icon-success'
-      } else if (this.checkRes === 'fail') {
-        return 'el-icon-error'
+      if (this.checkResult === 'pass') {
+        return 'el-icon-circle-check'
+      } else if (this.checkResult === 'fail') {
+        return 'el-icon-circle-close'
       } else {
         return ''
       }
@@ -153,7 +160,8 @@ export default {
     dialogVisible (value) {
       if (!value) {
         this.$refs.addForm.resetFields()
-        this.checkRes = null
+        this.checkResult = null
+        this.checkLoading = false
         this.resetForm()
       }
     }
@@ -197,15 +205,13 @@ export default {
   }
 }
 
-/deep/ .el-icon-success {
+/deep/ .el-icon-circle-check {
   margin-left: 10px;
   color: @success;
-  font-size: 20px;
 }
 
-/deep/ .el-icon-error {
+/deep/ .el-icon-circle-close {
   margin-left: 10px;
   color: red;
-  font-size: 20px;
 }
 </style>

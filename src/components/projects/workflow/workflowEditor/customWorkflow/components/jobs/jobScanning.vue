@@ -50,7 +50,7 @@
         </el-option>
         <el-option v-for="(scanning,index) in scanningList" :key="index" :value="scanning.name" :label="scanning.name">{{scanning.name}}</el-option>
       </el-select>
-      <el-button type="success" size="mini" plain :disabled="Object.keys(scanning).length === 0" @click="addScanning()">+ {{$t(`global.add`)}}</el-button>
+      <el-button type="primary" size="mini" plain :disabled="Object.keys(scanning).length === 0" @click="addScanning()">+ {{$t(`global.add`)}}</el-button>
     </el-form>
     <el-dialog :title="`${curItem.name} 分支配置`" :visible.sync="isShowBranchDialog" :append-to-body="true" width="40%">
       <el-table :data="curItem.repos" size="small">

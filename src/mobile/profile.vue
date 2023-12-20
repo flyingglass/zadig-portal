@@ -92,8 +92,12 @@ export default {
       }
     },
     async logOut () {
-      await this.$store.dispatch('LOGINOUT')
-      this.$router.push('/signin')
+      const result = await this.$store.dispatch('LOGOUT')
+      if (result.enable_redirect && result.redirect_url) {
+        window.location.href = result.redirect_url
+      } else {
+        this.$router.push('/signin')
+      }
     }
   },
   computed: {

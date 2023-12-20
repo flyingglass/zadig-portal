@@ -60,8 +60,6 @@ export default {
       }
     }
     this.redirectByDevice()
-    const themeColor = this.$store.state.theme.theme
-    document.documentElement.setAttribute('class', `${themeColor}-theme`)
   }
 }
 </script>

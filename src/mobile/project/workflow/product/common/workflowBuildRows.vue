@@ -5,7 +5,7 @@
         <el-table-column :label="`服务 ${item.name} 的代码库`">
           <template slot-scope="scope">
             <el-row>
-              <template v-if="!scope.row.use_default">
+              <template v-if="!scope.row.hidden">
                 <el-col :span="7">
                   <div class="repo-name-container">
                     <el-tooltip class="item" effect="dark" :content="scope.row.repo_name" placement="top">

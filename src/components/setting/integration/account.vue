@@ -49,7 +49,6 @@
               v-model="userAccountGitHub.config.clientSecret"
               placeholder="输入 OAuth App Client Secret"
               autofocus
-              show-password
               type="password"
               clearable
               v-if="dialogUserAccountFormVisible"
@@ -91,7 +90,7 @@
             ></el-input>
           </el-form-item>
           <el-form-item label="管理员密码" prop="bindPW">
-            <el-input v-model="userAccountAD.config.bindPW"   show-password v-if="dialogUserAccountFormVisible && userAccount.name ==='Microsoft Active Directory'"
+            <el-input v-model="userAccountAD.config.bindPW" v-if="dialogUserAccountFormVisible && userAccount.name ==='Microsoft Active Directory'"
                       type="password" placeholder="管理员密码" autofocus clearable auto-complete="off"></el-input>
           </el-form-item>
           <el-form-item prop="startTLS" label="使用 SSL">
@@ -169,7 +168,7 @@
             ></el-input>
           </el-form-item>
           <el-form-item label="管理员密码" prop="bindPW">
-            <el-input v-model="userAccountLDAP.config.bindPW"  show-password v-if="dialogUserAccountFormVisible && userAccount.name ==='OpenLDAP'"
+            <el-input v-model="userAccountLDAP.config.bindPW" v-if="dialogUserAccountFormVisible && userAccount.name ==='OpenLDAP'"
                       type="password" placeholder="管理员密码" autofocus clearable auto-complete="off"></el-input>
           </el-form-item>
           <el-form-item prop="startTLS" label="使用 SSL">
@@ -249,7 +248,6 @@
             <el-input
               v-if="dialogUserAccountFormVisible"
               v-model="userAccountOAuth.config.clientSecret"
-              show-password
               type="password"
               placeholder="输入 OAuth Client Secret"
               autofocus
@@ -289,6 +287,14 @@
               default-first-option
               placeholder="请输入 Scopes">
             </el-select>
+          </el-form-item>
+          <el-form-item label="开启登出回调" prop="enable_logout">
+            <el-checkbox v-model="userAccountOAuth.enable_logout"></el-checkbox>
+          </el-form-item>
+          <el-form-item v-if="userAccountOAuth.enable_logout" label="登出回调地址" prop="logout_redirect_url">
+            <el-input v-model="userAccountOAuth.logout_redirect_url"
+              placeholder="请输入回调地址">
+            </el-input>
           </el-form-item>
         </el-form>
       </template>
@@ -391,6 +397,7 @@
   </div>
 </template>
 <script>
+import bus from '@utils/eventBus'
 import {
   getConnectorsAPI,
   deleteConnectorAPI,
@@ -530,6 +537,8 @@ export default {
         type: 'oauth',
         id: 'oauth',
         name: 'OAuth',
+        enable_logout: false,
+        logout_redirect_url: '',
         config: {
           authorizationURL: '',
           claimMapping: {
@@ -1234,6 +1243,7 @@ export default {
   },
   mounted () {
     this.getAccountConfig()
+    bus.$emit('set-topbar-title', { title: '', breadcrumb: [{ title: this.$t(`sidebarMenu.systemIntegration`), url: '/v1/system/integration' }, { title: this.$t(`sysSetting.integration.accountTab`), url: '' }] })
   }
 }
 </script>
@@ -1242,8 +1252,14 @@ export default {
 .integration-account-container {
   position: relative;
   flex: 1;
+  padding: 15px 30px;
   overflow: auto;
   font-size: 13px;
+
+  .sync-container {
+    padding-top: 15px;
+    padding-bottom: 15px;
+  }
 
   .tips {
     display: block;

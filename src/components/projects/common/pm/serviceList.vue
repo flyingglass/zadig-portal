@@ -42,7 +42,7 @@
   </div>
 </template>
 <script>
-import { deleteServiceTemplateAPI, getServiceTemplatesAPI } from '@api'
+import { deleteProjectServiceAPI, getProjectServicesAPI } from '@api'
 import UpdateEnv from '../../serviceMgr/pm/updateEnv'
 import { mapGetters } from 'vuex'
 
@@ -103,7 +103,7 @@ export default {
     getServiceTemplates () {
       const projectName = this.$route.params.project_name
       const serviceName = this.$route.query.serviceName
-      getServiceTemplatesAPI(projectName).then((res) => {
+      getProjectServicesAPI(projectName).then((res) => {
         this.serviceList = res.data
         this.serviceList.sort(compare)
         if (res.data.length !== 0) {
@@ -133,7 +133,7 @@ export default {
         cancelButtonText: this.$t(`global.cancel`),
         type: 'warning'
       }).then(() => {
-        deleteServiceTemplateAPI(
+        deleteProjectServiceAPI(
           obj.service_name,
           obj.type,
           this.projectName,

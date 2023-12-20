@@ -25,7 +25,7 @@
   </div>
 </template>
 <script>
-import { queryServiceWorkloads, serviceTemplateWithConfigAPI } from '@/api'
+import { queryServiceWorkloads, projectServiceWithConfigAPI } from '@api'
 import ServiceModule from './serviceModules'
 import CommonBuild from '@/components/projects/build/commonBuild.vue'
 
@@ -111,7 +111,7 @@ export default {
     },
     async getServiceModules (data) {
       this.build.serviceName = data.label
-      const { service_module } = await serviceTemplateWithConfigAPI(
+      const { service_module } = await projectServiceWithConfigAPI(
         data.label,
         this.projectName
       )

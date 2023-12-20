@@ -96,11 +96,11 @@
                 <div class="name-listing-footer">
                   <ul>
                     <li v-if="scope.row.email">
-                      <i class="el-icon-message"></i>
+                      <i class="icon el-icon-message"></i>
                       <a :href="`mailto:${scope.row.email}`">{{scope.row.email}}</a>
                     </li>
                     <li v-if="scope.row.phone">
-                      <i class="el-icon-mobile"></i>
+                      <i class="icon el-icon-mobile"></i>
                       <a :href="`tel:${scope.row.phone}`">{{scope.row.phone}}</a>
                     </li>
                   </ul>
@@ -109,13 +109,13 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="last_login_time" :label="$t('sysSetting.users.loginInfo')">
+        <el-table-column prop="last_login_time" :label="$t('sysSetting.users.loginInfo')" width="180">
           <template slot-scope="scope">
             <span v-if="scope.row.last_login_time">{{$utils.convertTimestamp(scope.row.last_login_time)}}</span>
             <span v-else>{{$t('sysSetting.users.notLoggedIn')}}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('sysSetting.users.source')">
+        <el-table-column :label="$t('sysSetting.users.source')" width="120">
           <template slot-scope="scope">
             <span v-if="scope.row.identity_type" class="origin">
               <i class="iconfont type" :class="'icon'+scope.row.identity_type"></i>
@@ -123,7 +123,7 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column :label="$t(`global.operation`)" width="280">
+        <el-table-column :label="$t(`global.operation`)" width="180">
           <template slot-scope="scope">
             <el-button @click="editUserInfo(scope.row)" type="primary" size="mini" plain>{{$t(`global.edit`)}}</el-button>
             <el-button @click="deleteUser(scope.row)" type="danger" size="mini" plain>{{$t(`global.delete`)}}</el-button>
@@ -413,18 +413,21 @@ export default {
     .name-listing-details {
       top: 0;
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
       padding: 0;
 
       .avator span {
         position: relative;
-        margin-right: 10px;
+        margin-right: 12px;
         color: @themeColor;
         font-size: 25px;
       }
 
       .name-listing-description {
+        display: flex;
+        flex-direction: column;
+
         .name-listing-title {
           margin: 0;
           color: #333;
@@ -437,21 +440,26 @@ export default {
         position: relative;
         padding: 0;
         background-color: transparent;
-        border-radius: 0 0 4px 4px;
 
         ul {
+          display: flex;
+          flex-direction: column;
           margin: 0;
           padding: 0;
           list-style: none;
 
           li {
-            display: inline-block;
-            margin-right: 8px;
+            display: flex;
+            align-items: center;
             color: #777;
             font-size: 14px;
 
-            .iconfont {
-              font-size: 14px;
+            .icon {
+              margin-right: 2px;
+            }
+
+            a {
+              white-space: nowrap;
             }
           }
         }

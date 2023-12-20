@@ -45,7 +45,7 @@ export default {
         element.envName = element.name
       })
       if (envNameList.length) {
-        this.envNameList = envNameList
+        this.envNameList = envNameList.filter(re => !re.production)
       }
     },
     openDialog () {

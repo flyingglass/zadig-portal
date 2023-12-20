@@ -71,7 +71,7 @@
         <el-button type="primary" size="small"  :disabled="loading" @click="onboardingFinish">{{$t('project.onboardingComp.finish')}}</el-button>
       </div>
     </div>
-    <el-dialog :visible.sync="taskDialogVisible" :title="$t(`workflow.runProductWorkflow`)" custom-class="run-workflow" width="60%" class="dialog">
+    <el-dialog :visible.sync="taskDialogVisible" :title="$t(`workflow.runProductWorkflow`)" custom-class="run-workflow" width="70%" class="dialog">
       <RunWorkflow
         v-if="taskDialogVisible"
         :workflowName="workflow.name"

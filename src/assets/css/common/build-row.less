@@ -26,15 +26,17 @@
     padding: 0 5px;
   }
 
-  .el-input,
-  .el-select {
-    &.full-width {
-      width: 40%;
-    }
-  }
-
   .build-row {
     padding: 5px 0;
+
+    .el-input,
+    .el-select {
+      width: 100%;
+
+      &.full-width {
+        width: 40%;
+      }
+    }
 
     .repo-warning {
       margin-left: 4px;

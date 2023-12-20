@@ -60,7 +60,7 @@ export default {
       disableStdin: true,
       scrollback: 9999999,
       cursorStyle: null,
-      theme: this.$store.state.theme.xtermTheme
+      theme: this.$store.state.preference.xtermTheme
     })
     const fitAddon = new FitAddon()
     term.loadAddon(fitAddon)

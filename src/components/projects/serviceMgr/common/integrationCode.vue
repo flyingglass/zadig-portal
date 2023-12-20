@@ -132,7 +132,6 @@
         <el-form-item :label="codeAdd.type==='gitlab'?'Secret':'Client Secret'" prop="client_secret">
           <el-input
             v-model="codeAdd.client_secret"
-            show-password
             type="password"
             :placeholder="codeAdd.type==='gitlab'?'Secret':'Client Secret'"
             auto-complete="off"
@@ -158,7 +157,6 @@
           <el-input
             v-model="codeAdd.client_secret"
             placeholder="Client Secret"
-            show-password
             type="password"
             auto-complete="off"
           ></el-input>
@@ -186,7 +184,6 @@
           <el-input
             v-model="codeAdd.private_access_token"
             placeholder="Access Token"
-            show-password
             type="password"
             auto-complete="off"
           ></el-input>
@@ -390,7 +387,7 @@ export default {
             ) {
               this.goToCodeHostAuth(codehostId, redirectUrl)
             }
-            this.handleCodeCancel()
+            this.cancel()
           })
         } else {
           return false

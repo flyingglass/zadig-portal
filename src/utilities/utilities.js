@@ -136,14 +136,9 @@ const utils = {
   * @return {string}           状态 css class name
   */
   _getStatusColor (status) {
-    if (status && status !== '') {
-      if (status === 'Running') {
-        return 'status-running'
-      } else if (status === 'Succeeded') {
-        return 'status-running'
-      } else {
-        return 'service-not-running'
-      }
+    const success = ['Running', 'Succeeded', 'SUSPEND: False', 'NoSuspend']
+    if (success.includes(status)) {
+      return 'status-running'
     } else {
       return 'service-not-running'
     }
@@ -584,7 +579,7 @@ const utils = {
       return ''
     } else if (status === 'running') {
       return 'primary'
-    } else if (status === 'timeout' || status === 'pending-approval') {
+    } else if (status === 'timeout' || status === 'pending-approval' || status === 'waitforapprove') {
       return 'warning'
     } else if (status === 'cancelled' || status === 'skipped') {
       return 'info'
@@ -745,6 +740,23 @@ const utils = {
     const decryptedText = aesjs.utils.utf8.fromBytes(decryptedBytes.slice(16)) // 截取后16位
     // base64
     return decryptedText
+  },
+  validatePassword () {
+    const validator = (rule, value, callback) => {
+      const reg = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
+      if (value === '') {
+        callback(new Error(i18n.t('sysSetting.users.inputPassword')))
+      } else if (!reg.test(value)) {
+        callback(
+          new Error(
+            i18n.t('global.passwordStrengthTip')
+          )
+        )
+      } else {
+        callback()
+      }
+    }
+    return validator
   }
 }
 

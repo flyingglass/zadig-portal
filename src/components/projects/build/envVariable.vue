@@ -21,7 +21,7 @@
               @change="changeEnvType(build_env_index)"
             >
               <el-option :label="$t(`global.string`)" value="string"></el-option>
-              <el-option :label="$t(`global.enumerate`)" value="choice"></el-option>
+              <el-option :label="$t(`global.enumeration`)" value="choice"></el-option>
             </el-select>
             <i
               v-show="preEnvs.envs[build_env_index].type === 'choice'"
@@ -57,10 +57,10 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="1" class="mg-t16">
+        <el-col :span="1" style="margin-top: 11px;" v-if="showEnvType">
           <EnvTypeSelect v-model="preEnvs.envs[build_env_index].command" isFixed isRuntime isOther  @change="handleEnvTypeChange($event, build_env_index)"/>
         </el-col>
-        <el-col :span="12" v-if="isJenkins&&preEnvs.envs[build_env_index].name==='IMAGE'" class="tip">
+        <el-col :span="11" v-if="isJenkins&&preEnvs.envs[build_env_index].name==='IMAGE'" class="tip">
           <el-checkbox v-model="preEnvs.envs[build_env_index].auto_generate"></el-checkbox>
           <span>{{$t(`build.prompt.useSystemImageNamingRules`)}}</span>
           <router-link
@@ -88,7 +88,7 @@
         </el-col>
       </el-row>
     </el-form>
-    <el-dialog :visible.sync="dialogVisible" :title="$t(`global.enumerate`)" width="600px" :close-on-click-modal="false" :show-close="false" append-to-body>
+    <el-dialog :visible.sync="dialogVisible" :title="$t(`global.enumeration`)" width="600px" :close-on-click-modal="false" :show-close="false" append-to-body>
       <el-form ref="form" :model="currentVars" label-position="left" label-width="90px">
         <el-form-item :label="$t(`build.variableKey`)">
           <el-input v-model="currentVars.key" size="small"></el-input>
@@ -175,6 +175,10 @@ export default {
     envs: {
       type: Array,
       default: () => []
+    },
+    showEnvType: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -193,6 +197,10 @@ export default {
         {
           variable: '$WORKSPACE',
           desc: this.$t(`systemVariables.workspace`)
+        },
+        {
+          variable: '$PROJECT',
+          desc: this.$t(`systemVariables.project`)
         },
         {
           variable: '$TASK_ID',
@@ -289,6 +297,12 @@ export default {
           desc: this.$t(`systemVariables.repoCommitID`)
         },
         {
+          // eslint-disable-next-line no-template-curly-in-string
+          variable: '$<REPO>_ORG',
+          // eslint-disable-next-line no-template-curly-in-string
+          desc: this.$t(`systemVariables.repoOrg`)
+        },
+        {
           variable: '',
           desc: this.$t(`systemVariables.otherTypeRepoWarning`)
         }
@@ -299,6 +313,10 @@ export default {
         {
           variable: '$WORKSPACE',
           desc: this.$t(`systemVariables.workspace`)
+        },
+        {
+          variable: '$PROJECT',
+          desc: this.$t(`systemVariables.project`)
         },
         {
           variable: '$LINKED_ENV',
@@ -323,6 +341,50 @@ export default {
         {
           variable: '$ZADIG',
           desc: this.$t(`systemVariables.zadig`)
+        },
+        {
+          // eslint-disable-next-line no-template-curly-in-string
+          variable: '$REPONAME_<index>',
+          desc: this.$t(`systemVariables.repoNameIndex`)
+        },
+        {
+          // eslint-disable-next-line no-template-curly-in-string
+          variable: '$REPO_<index>',
+          desc: this.$t(`systemVariables.repoIndex`)
+        },
+        {
+          // eslint-disable-next-line no-template-curly-in-string
+          variable: '$<REPO>_PR',
+          // eslint-disable-next-line no-template-curly-in-string
+          desc: this.$t(`systemVariables.repoPR`)
+        },
+        {
+          // eslint-disable-next-line no-template-curly-in-string
+          variable: '$<REPO>_BRANCH',
+          // eslint-disable-next-line no-template-curly-in-string
+          desc: this.$t(`systemVariables.repoBranch`)
+        },
+        {
+          // eslint-disable-next-line no-template-curly-in-string
+          variable: '$<REPO>_TAG',
+          // eslint-disable-next-line no-template-curly-in-string
+          desc: this.$t(`systemVariables.repoTag`)
+        },
+        {
+          // eslint-disable-next-line no-template-curly-in-string
+          variable: '$<REPO>_COMMIT_ID',
+          // eslint-disable-next-line no-template-curly-in-string
+          desc: this.$t(`systemVariables.repoCommitID`)
+        },
+        {
+          // eslint-disable-next-line no-template-curly-in-string
+          variable: '$<REPO>_ORG',
+          // eslint-disable-next-line no-template-curly-in-string
+          desc: this.$t(`systemVariables.repoOrg`)
+        },
+        {
+          variable: '',
+          desc: this.$t(`systemVariables.otherTypeRepoWarning`)
         }
       ]
     }
@@ -428,9 +490,6 @@ export default {
 </script>
 
 <style lang="less" scoped>
-@secondaryColor: #888888;
-@primaryColor: #000;
-
 .item-title {
   display: inline-block;
   width: 117px;

@@ -100,7 +100,7 @@ export default {
       getTestHealthAPI({
         startDate: startTime,
         endDate: endTime,
-        selectedProjects: selectedProjects
+        projectNames: selectedProjects
       }).then(res => {
         this.option.series[0].data = [
           {

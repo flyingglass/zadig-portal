@@ -3133,12 +3133,12 @@ ecc-jsbn@~0.1.1:
     jsbn "~0.1.0"
     safer-buffer "^2.1.0"
 
-echarts@4.4.0:
-  version "4.4.0"
-  resolved "https://registry.npmmirror.com/echarts/download/echarts-4.4.0.tgz?cache=0&sync_timestamp=1612593208259&other_urls=https%3A%2F%2Fregistry.npmmirror.com%2Fecharts%2Fdownload%2Fecharts-4.4.0.tgz#d5260566cef0b98f5a00baf1b5010e92c1c23661"
-  integrity sha1-1SYFZs7wuY9aALrxtQEOksHCNmE=
+echarts@4.7.0:
+  version "4.7.0"
+  resolved "https://registry.npmmirror.com/echarts/-/echarts-4.7.0.tgz#5b3875a4c2f91e3929425fabab9eace7e4098b3f"
+  integrity sha512-NlOTdUcAsIyCCG+N4uh0ZEvXtrPW2jvcuqf03RyqYeCKzyPbiOQ4I3MdKXMhxG3lBdqQNdNXVT71SB4KTQjN0A==
   dependencies:
-    zrender "4.1.1"
+    zrender "4.3.0"
 
 ee-first@1.1.1:
   version "1.1.1"
@@ -10485,6 +10485,11 @@ vue-i18n@8.28.2:
   resolved "https://registry.npmmirror.com/vue-i18n/-/vue-i18n-8.28.2.tgz#913558066e274395c0a9f40b2f3393d5c2636840"
   integrity sha512-C5GZjs1tYlAqjwymaaCPDjCyGo10ajUphiwA922jKt9n7KPpqR7oM1PCwYzhB/E7+nT3wfdG3oRre5raIT1rKA==
 
+vue-infinite-loading@^2.4.5:
+  version "2.4.5"
+  resolved "https://registry.npmmirror.com/vue-infinite-loading/-/vue-infinite-loading-2.4.5.tgz#cc20fd40af7f20188006443c99b60470cf1de1b3"
+  integrity sha512-xhq95Mxun060bRnsOoLE2Be6BR7jYwuC89kDe18+GmCLVrRA/dU0jrGb12Xu6NjmKs+iTW0AA6saSEmEW4cR7g==
+
 vue-json-pretty@1.6.0:
   version "1.6.0"
   resolved "https://registry.npmmirror.com/vue-json-pretty/download/vue-json-pretty-1.6.0.tgz?cache=0&sync_timestamp=1611713190769&other_urls=https%3A%2F%2Fregistry.npmmirror.com%2Fvue-json-pretty%2Fdownload%2Fvue-json-pretty-1.6.0.tgz#ea3efaa7d574ee987e636908395ae4a7044f9aee"
@@ -10984,10 +10989,10 @@ yargs@~3.10.0:
     decamelize "^1.0.0"
     window-size "0.1.0"
 
-zrender@4.1.1:
-  version "4.1.1"
-  resolved "https://registry.npmmirror.com/zrender/download/zrender-4.1.1.tgz?cache=0&sync_timestamp=1612184244085&other_urls=https%3A%2F%2Fregistry.npmmirror.com%2Fzrender%2Fdownload%2Fzrender-4.1.1.tgz#201e58a55cf1a7e973e1dbad3c15596ef8779f54"
-  integrity sha1-IB5YpVzxp+lz4dutPBVZbvh3n1Q=
+zrender@4.3.0:
+  version "4.3.0"
+  resolved "https://registry.npmmirror.com/zrender/-/zrender-4.3.0.tgz#9f056121b20bbae44414d287bf6a119ff7042661"
+  integrity sha512-Dii6j2bDsPkxQayuVf2DXJeruIB/mKVxxcGRZQ9GExiBd4c3w7+oBuvo1O/JGHeFeA1nCmSDVDs/S7yKZG1nrA==
 
 zwitch@^1.0.0:
   version "1.0.5"

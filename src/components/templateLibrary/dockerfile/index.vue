@@ -4,7 +4,7 @@
         <div class="service-container">
           <multipane class="vertical-panes"
                      layout="vertical">
-            <div class="file-tree-container" :style="{width: '240px', maxWidth: '400px'}">
+            <div class="file-tree-container" :style="{width: '250px', maxWidth: '400px'}">
               <FileTree :files="files"
                            :fileContentChange="fileContentChange"
                            ref="FileTree"
@@ -116,12 +116,14 @@ export default {
         this.getFiles()
       }
     },
-    updateFile (switchNode) {
-      this.$refs.FileEditor.updateFile().then(() => {
-        if (switchNode) {
+    updateFile (operation) {
+      if (operation === 'switchNode') {
+        this.$refs.FileEditor.updateFile().then(() => {
           this.$refs.FileTree.selectAndSwitchTreeNode()
-        }
-      })
+        })
+      } else {
+        this.$refs.FileEditor.updateFile()
+      }
     }
   },
   computed: {
@@ -143,10 +145,6 @@ export default {
             name: val.name,
             status: 'named'
           }
-          // if (this.stagedFile[val.name]) {
-          //   this.fileInTree.content = this.stagedFile[val.name]
-          // }
-          // this.$refs.myCm && this.editorFocus()
         }
       },
       immediate: false

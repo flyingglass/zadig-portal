@@ -48,7 +48,7 @@
         </el-option>
         <el-option v-for="(test,index) in testList" :key="index" :value="test.name" :label="test.name">{{test.name}}</el-option>
       </el-select>
-      <el-button type="success" size="mini" plain :disabled="Object.keys(test).length === 0" @click="addTest()">+ {{$t(`global.add`)}}</el-button>
+      <el-button type="primary" size="mini" plain :disabled="Object.keys(test).length === 0" @click="addTest()">+ {{$t(`global.add`)}}</el-button>
     </el-form>
     <el-dialog :title="`${curItem.name} 变量配置`" :visible.sync="isShowVarDialog" :append-to-body="true" width="40%">
       <el-table :data="curItem.key_vals" size="small">
@@ -69,7 +69,7 @@
             <el-input
               class="password"
               v-model="scope.row.value"
-              :type="scope.row.is_credential ? 'passsword' : ''"
+              :type="scope.row.is_credential ? 'password' : ''"
               :show-password="scope.row.is_credential ? true : false"
               v-if="scope.row.command !== 'other'&&scope.row.type === 'string'"
               size="small"

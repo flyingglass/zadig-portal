@@ -53,57 +53,91 @@ const jobTabList = [
     name: 'env'
   }
 ]
-const jobTypeList = [
+
+const jobTypeGroup = [
   {
-    label: 'build',
-    name: 'zadig-build',
-    type: 'zadig-build',
-    is_offical: true,
-    description: '可直接引用「项目」-「构建」模块中的配置'
+    name: '构建',
+    category: 'build',
+    jobTypeList: [
+      {
+        label: 'build',
+        name: 'zadig-build',
+        type: 'zadig-build',
+        is_offical: true,
+        description: '可直接引用「项目」-「构建」模块中的配置'
+      }
+    ]
   },
   {
-    label: 'deploy',
-    name: 'zadig-deploy',
-    type: 'zadig-deploy',
-    is_offical: true,
-    description: '可更新容器形态的服务镜像'
+    name: '部署',
+    category: 'deploy',
+    jobTypeList: [
+      {
+        label: 'deploy',
+        name: 'zadig-deploy',
+        type: 'zadig-deploy',
+        is_offical: true,
+        description: '可更新容器形态的服务镜像、服务变量和服务配置'
+      },
+      {
+        label: 'customDeploy',
+        name: 'custom-deploy',
+        type: 'custom-deploy',
+        is_offical: true,
+        description: '可更新 Kubernetes 中容器镜像'
+      }
+    ]
   },
   {
-    label: 'freestyle',
-    name: 'freestyle',
-    type: 'freestyle',
-    is_offical: true,
-    description: '支持拉取代码、执行 Shell 脚本、文件存储等功能'
+    name: '测试',
+    category: 'test',
+    jobTypeList: [
+      {
+        label: 'test',
+        name: 'zadig-test',
+        type: 'zadig-test',
+        is_offical: true,
+        description: '可直接引用「项目」-「测试」模块中的测试配置'
+      },
+      {
+        label: 'scan',
+        name: 'zadig-scanning',
+        type: 'zadig-scanning',
+        is_offical: true,
+        description: '可直接引用「项目」-「代码扫描」模块中的配置'
+      }
+
+    ]
   },
   {
-    label: 'customDeploy',
-    name: 'custom-deploy',
-    type: 'custom-deploy',
-    is_offical: true,
-    description: '可更新 Kubernetes 中容器镜像'
+    name: '数据变更',
+    category: 'data-change',
+    jobTypeList: [] // 'MySQL 数据库变更', 'DMS 数据变更工单'
   },
   {
-    label: 'test',
-    name: 'zadig-test',
-    type: 'zadig-test',
-    is_offical: true,
-    description: '可直接引用「项目」-「测试」模块中的测试配置'
-  },
-  {
-    label: 'scan',
-    name: 'zadig-scanning',
-    type: 'zadig-scanning',
-    is_offical: true,
-    description: '可直接引用「项目」-「代码扫描」模块中的配置。'
-  },
-  {
-    label: 'distribute',
-    name: 'zadig-distribute-image',
-    type: 'zadig-distribute-image',
-    is_offical: true,
-    description: '可将镜像 Retag 后推送到镜像仓库'
+    name: '其他',
+    category: 'other', // frontend defined
+    jobTypeList: [
+      {
+        label: 'freestyle',
+        name: 'freestyle',
+        type: 'freestyle',
+        is_offical: true,
+        description: '支持拉取代码、执行 Shell 脚本、文件存储等功能'
+      },
+      {
+        label: 'distribute',
+        name: 'zadig-distribute-image',
+        type: 'zadig-distribute-image',
+        is_offical: true,
+        description: '可将镜像 Retag 后推送到镜像仓库'
+      }
+    ] // '执行 Jenkins Job', 'JIRA issue 状态变更', 'Nacos 配置修改'
   }
 ]
+
+const jobTypeList = Array.prototype.concat.apply([], jobTypeGroup.map(group => group.jobTypeList))
+
 const configList = [
   {
     label: 'var',
@@ -158,6 +192,10 @@ const buildEnvs = [
     desc: '工作目录'
   },
   {
+    variable: '$PROJECT',
+    desc: '项目标识'
+  },
+  {
     variable: '$TASK_ID',
     desc: '工作流任务 ID'
   },
@@ -200,7 +238,12 @@ const buildEnvs = [
   {
     variable: '$<REPO>_COMMIT_ID',
     // eslint-disable-next-line
-    desc: '构建时使用代码 Commit 信息，其中 <REPO> 是具体的代码仓库名称，使用时可以填写仓库名称或者结合 $REPO_index]变量使用，比如可以通过 eval COMMITID=\\${${REPO_0}_COMMIT_ID} 方式获取第一个代码库的 COMMIT 信息'
+    desc: '构建时使用代码 Commit 信息，其中 <REPO> 是具体的代码仓库名称，使用时可以填写仓库名称或者结合 $REPO_index 变量使用，比如可以通过 eval COMMITID=\\${${REPO_0}_COMMIT_ID} 方式获取第一个代码库的 COMMIT 信息'
+  },
+  {
+    variable: '$<REPO>_ORG',
+    // eslint-disable-next-line
+    desc: '构建时使用的代码组织/用户信息，其中 <REPO> 是具体的代码仓库名称，使用时可以填写仓库名称或者结合 $REPO_index 变量使用，比如可以通过 eval org=\${${REPO_0}_ORG} 方式获取第一个代码库的分支信息'
   },
   {
     variable: '',
@@ -261,6 +304,86 @@ const notifyPlatform = [
     label: 'feishu',
     desc: '飞书'
   }]
+const runTypes = [
+  {
+    label: '默认执行',
+    value: ''
+  },
+  {
+    label: '默认不执行',
+    value: 'default_not_run'
+  },
+  {
+    label: '强制执行',
+    value: 'force_run'
+  }]
+// 定义必填字段
+const requireFields = {
+  'zadig-build': [
+    {
+      type: 'String',
+      field: 'docker_registry_id'
+    },
+    {
+      type: 'Array',
+      field: 'service_and_builds'
+    }],
+  'zadig-deploy': [
+    {
+      type: 'String',
+      field: 'env'
+    }],
+  'custom-deploy': [
+    {
+      type: 'String',
+      field: 'docker_registry_id'
+    },
+    {
+      type: 'String',
+      field: 'cluster_id'
+    },
+    {
+      type: 'String',
+      field: 'cluster_id'
+    },
+    {
+      type: 'String',
+      field: 'namespace'
+    }
+  ],
+  'zadig-scanning': [
+    {
+      type: 'Array',
+      field: 'scannings'
+    }
+  ],
+  'zadig-distribute-image': [
+    {
+      type: 'String',
+      field: 'target_registry_id'
+    }
+  ]
+}
+const envTypes = [
+  {
+    label: '测试环境',
+    value: false
+  }]
+
+const deployContentList = [
+  {
+    label: 'serviceImage',
+    value: 'image'
+  },
+  {
+    label: 'serviceVar',
+    value: 'vars'
+  },
+  {
+    label: 'serviceConfiguration',
+    value: 'config'
+  }
+]
 export {
   validateJobName,
   validateWorkflowName,
@@ -268,11 +391,16 @@ export {
   buildTabList,
   configList,
   jobTabList,
+  jobTypeGroup,
   jobTypeList,
   editorOptions,
   jobType,
   buildEnvs,
   globalConstEnvs,
   notifyType,
-  notifyPlatform
+  notifyPlatform,
+  runTypes,
+  requireFields,
+  envTypes,
+  deployContentList
 }

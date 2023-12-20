@@ -25,7 +25,7 @@ export default {
       padding: '15',
       fontFamily: 'Monaco,Consolas,monospace,Microsoft YaHei,Arial',
       disableStdin: true,
-      theme: this.$store.state.theme.xtermTheme
+      theme: this.$store.state.preference.xtermTheme
     })
     const fitAddon = new FitAddon()
     term.loadAddon(fitAddon)

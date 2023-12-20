@@ -2,11 +2,11 @@
     <component :is="currentComponents" />
 </template>
 <script>
-import CreateHostEnv from './hostEnv/createHostEnv.vue'
-import CreateK8sEnv from './k8sPmEnv/createK8sEnv.vue'
-import CreatePmEnv from './pmEnv/createPmEnv.vue'
-import CreateHelmEnv from './helmEnv/createHelmEnv.vue'
-import { getSingleProjectAPI } from '@/api'
+import CreateHostEnv from './host/creation/createHostEnv.vue'
+import CreateK8sEnv from './k8s/creation/createK8sEnv.vue'
+import CreatePmEnv from './pm/creation/createPmEnv.vue'
+import CreateHelmEnv from './helm/creation/createHelmEnv.vue'
+import { getSingleProjectAPI } from '@api'
 
 export default {
   name: 'createEnv',

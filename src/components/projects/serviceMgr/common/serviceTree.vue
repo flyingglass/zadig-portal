@@ -1,7 +1,13 @@
 <template>
   <div class="service-container">
     <!--start of workspace-tree-dialog-->
-    <el-dialog :append-to-body="true" :visible.sync="workSpaceModalVisible" width="60%" :title="$t('services.k8s.selectFileToSync')" class="fileTree-dialog">
+    <el-dialog
+      :append-to-body="true"
+      :visible.sync="workSpaceModalVisible"
+      width="60%"
+      :title="$t('services.k8s.selectFileToSync')"
+      class="fileTree-dialog"
+    >
       <GitFileTree
         ref="worktree"
         :codehostId="source.codehostId"
@@ -28,7 +34,11 @@
     >
       <div class="from-code-container">
         <el-form :model="source" :rules="sourceRules" label-position="left" ref="sourceForm" label-width="130px">
-          <el-form-item :label="$t('repository.info.repository')" prop="codehostId" :rules="{required: true, message: $t('repository.prompt.selectGitProvider'), trigger: 'change'}">
+          <el-form-item
+            :label="$t('repository.info.provider')"
+            prop="codehostId"
+            :rules="{required: true, message: $t('repository.prompt.selectGitProvider'), trigger: 'change'}"
+          >
             <el-select
               v-model="source.codehostId"
               size="small"
@@ -45,7 +55,11 @@
               >{{host.address + '('+host.alias+')'}}</el-option>
             </el-select>
           </el-form-item>
-          <el-form-item :label="$t('repository.info.orgOrUser')" prop="repoOwner" :rules="{required: true, message: $t('repository.prompt.selectOrgOrUsername'), trigger: 'change'}">
+          <el-form-item
+            :label="$t('repository.info.orgOrUser')"
+            prop="repoOwner"
+            :rules="{required: true, message: $t('repository.prompt.selectOrgOrUsername'), trigger: 'change'}"
+          >
             <el-select
               v-model.trim="source.repoOwner"
               size="small"
@@ -66,7 +80,11 @@
             </el-select>
           </el-form-item>
           <template>
-            <el-form-item :label="$t(`global.repository`)" prop="repoName" :rules="{required: true, message: $t('repository.prompt.selectRepo'), trigger: 'change'}">
+            <el-form-item
+              :label="$t(`global.repository`)"
+              prop="repoName"
+              :rules="{required: true, message: $t('repository.prompt.selectRepo'), trigger: 'change'}"
+            >
               <el-select
                 @change="getBranchInfoById(source.codehostId,source.repoOwner,source.repoName,source)"
                 @clear="clearRepoName"
@@ -84,7 +102,11 @@
                 <el-option v-for="(repo,index) in codeInfo['repos']" :key="index" :label="repo.name" :value="repo.name"></el-option>
               </el-select>
             </el-form-item>
-            <el-form-item :label="$t('repository.info.branch')" prop="branchName" :rules="{required: true, message: $t('repository.prompt.selectBranch'), trigger: 'change'}">
+            <el-form-item
+              :label="$t('repository.info.branch')"
+              prop="branchName"
+              :rules="{required: true, message: $t('repository.prompt.selectBranch'), trigger: 'change'}"
+            >
               <el-select
                 v-model.trim="source.branchName"
                 :placeholder="$t('repository.prompt.selectBranch')"
@@ -102,7 +124,11 @@
                 ></el-option>
               </el-select>
             </el-form-item>
-            <el-form-item prop="path" :label="$t('repository.info.fileOrFolder')" :rules="{required: true, message: $t('repository.prompt.selectFileOrFolder'), trigger: 'change'}">
+            <el-form-item
+              prop="path"
+              :label="$t('repository.info.fileOrFolder')"
+              :rules="{required: true, message: $t('repository.prompt.selectFileOrFolder'), trigger: 'change'}"
+            >
               {{ source.path}}
               <el-button
                 v-if="showSelectPath"
@@ -140,6 +166,7 @@
       :currentUpdatedServiceName="currentUpdatedServiceName"
       :currentUpdatedServiceTemplateId="currentUpdatedServiceTemplateId"
       :currentUpdatedServiceVariableYaml="currentUpdatedServiceVariableYaml"
+      :currentUpdatedServiceVariableKvs="currentUpdatedServiceVariableKvs"
       :currentUpdatedServiceAutoSync="currentUpdatedServiceAutoSync"
       :dialogImportFromYamlVisible.sync="openImportYamlDialog"
       @importYamlSuccess="importYamlSuccess"
@@ -150,8 +177,7 @@
       :importServiceFromNamespaceSuccess="importServiceFromNamespaceSuccess"
     />
     <div class="menu-container">
-      <el-row>
-        <el-col :span="10">
+      <div class="function-container">
           <div class="source-dropdown">
             <el-radio-group v-model="mode" size="mini">
               <el-tooltip effect="dark" :content="$t('services.common.servicesManagement')" placement="top">
@@ -166,9 +192,7 @@
               </el-tooltip>
             </el-radio-group>
           </div>
-        </el-col>
-        <el-col :span="14" class="text-right">
-          <div style="line-height: 32px;">
+          <div class="operation">
             <el-tooltip effect="dark" :content="$t('services.k8s.inputByManual')" placement="top">
               <el-button
                 v-if="deployType==='k8s'"
@@ -205,8 +229,7 @@
               </el-dropdown-menu>
             </el-dropdown>
           </div>
-        </el-col>
-      </el-row>
+      </div>
     </div>
     <div class="tree-container">
       <keep-alive>
@@ -256,48 +279,21 @@
                 @click.stop="() => reEditServiceName(node, data)"
               ></el-button>
               <span v-if="isShared(data)">
-                <el-tag v-if="data.type === 'k8s'" type="primary" effect="dark" size="mini" style="cursor: not-allowed;">{{$t('services.k8s.sharedService')}}</el-tag>
-              </span>
-              <span v-else :style="{'visibility': showHover[data.service_name] || data.visibility==='public' ? 'visible': 'hidden'}">
-                <el-tooltip
-                  v-if="checkPermissionSyncMixin({projectName: projectName, action: 'edit_service'})"
-                  effect="dark"
-                  placement="top"
-                >
-                  <div slot="content">{{$t('services.k8s.sharedServiceTooltip')}}</div>
-                  <el-tag
-                    v-if="data.type === 'k8s'"
-                    :type="data.visibility==='public'?'primary':'info'"
-                    :effect="data.visibility==='public'?'dark':'plain'"
-                    @click="changeServicePermission(data)"
-                    size="mini"
-                  >{{$t('services.k8s.sharedService')}}</el-tag>
-                </el-tooltip>
-                <el-tooltip v-else effect="dark" :content="$t('permission.lackPermission')" placement="top">
-                  <el-tag
-                    v-if="data.type === 'k8s'"
-                    type="info"
-                    :effect="data.visibility==='public'?'dark':'plain'"
-                    size="mini"
-                  >{{$t('services.k8s.sharedService')}}</el-tag>
-                </el-tooltip>
+                <el-tag
+                  v-if="data.type === 'k8s'"
+                  type="info"
+                  effect="plain"
+                  size="mini"
+                >{{$t('services.k8s.sharedService')}}</el-tag>
               </span>
               <span :style="{'visibility': showHover[data.service_name] ? 'visible': 'hidden'}" class="operation-container">
                 <el-button
                   v-hasPermi="{projectName: projectName, action: 'delete_service',isBtn:true}"
-                  v-if="(data.product_name===projectName||data.status === 'named')"
+                  v-if="(data.status === 'added'||data.status === 'named')"
                   type="text"
                   size="mini"
                   icon="el-icon-close"
                   @click.stop="() => deleteService(node, data)"
-                ></el-button>
-                <el-button
-                  v-hasPermi="{projectName: projectName, action: 'delete_service',isBtn:true}"
-                  v-else-if="data.product_name!==projectName && data.type ==='k8s'"
-                  type="text"
-                  size="mini"
-                  icon="el-icon-close"
-                  @click.stop="() => deleteSharedService(node, data)"
                 ></el-button>
                 <el-button
                   v-hasPermi="{projectName: projectName, action: 'edit_service',isBtn:true}"
@@ -352,47 +348,14 @@
       </el-tree>
       <div v-if="mode==='arrange' && showDragContainer" class="add-new-service drag-container"></div>
     </div>
-    <div
-      v-if="mode==='edit' && filteredSharedServices[0] && filteredSharedServices[0].children.length > 0 && deployType ==='k8s'"
-      class="shared-services-container"
-    >
-      <el-tree
-        ref="serviceSharedTree"
-        :data="filteredSharedServices"
-        :show-checkbox="false"
-        node-key="service_name"
-        default-expand-all
-        highlight-current
-        check-on-click-node
-        :indent="0"
-        :expand-on-click-node="false"
-      >
-        <span
-          @mouseover="setHovered(data.service_name)"
-          @mouseleave="unsetHovered(data.service_name)"
-          class="service-mgr-tree-node"
-          slot-scope="{ node, data }"
-        >
-          <i v-if="data.type==='k8s'" class="service-type el-icon-share"></i>
-          <el-tooltip v-if="node.label!==$t('services.k8s.sharedServicesList')" effect="light" :content="`${$t('services.k8s.originProject')}:${data.product_name}`" placement="bottom">
-            <span class="tree-service-name shared-list">{{`${node.label}`}}</span>
-          </el-tooltip>
-          <span v-else class="tree-service-name shared-list">{{`${node.label}`}}</span>
-          <span v-if="data.label!==$t('services.k8s.sharedServicesList') && showHover[data.service_name] " class="operation-container">
-            <el-button
-              v-hasPermi="{projectName: projectName, action: 'edit_service',isBtn:true}"
-              v-if="data.product_name!==projectName"
-              type="text"
-              size="mini"
-              icon="el-icon-plus"
-              @click="() => addSharedService(node, data)"
-            ></el-button>
-          </span>
-        </span>
-      </el-tree>
-    </div>
     <div v-if="mode==='edit'" class="search-container">
-      <el-input :placeholder="$t('services.common.searchService')" size="small" clearable suffix-icon="el-icon-search" v-model="searchService"></el-input>
+      <el-input
+        :placeholder="$t('services.common.searchService')"
+        size="small"
+        clearable
+        suffix-icon="el-icon-search"
+        v-model="searchService"
+      ></el-input>
     </div>
   </div>
 </template>
@@ -402,9 +365,8 @@ import GitFileTree from '@/components/common/gitFileTree.vue'
 import ImportFromTemplate from './importFromTemplate.vue'
 import ImportFromNamespace from './importFromNamespace.vue'
 import {
-  deleteServiceTemplateAPI,
+  deleteProjectServiceAPI,
   getSingleProjectAPI,
-  updateEnvTemplateAPI,
   getCodeSourceMaskedAPI,
   getRepoOwnerByIdAPI,
   getRepoNameByIdAPI,
@@ -413,17 +375,11 @@ import {
   updateLoadRepoServiceAPI,
   validPreloadService,
   getCodeProviderAPI,
-  serviceTemplateAPI,
-  updateServicePermissionAPI,
   updateServicesOrchestrationAPI
 } from '@api'
 export default {
   props: {
     services: {
-      type: Array,
-      required: true
-    },
-    sharedServices: {
       type: Array,
       required: true
     },
@@ -436,10 +392,6 @@ export default {
       type: Object,
       required: true,
       default: null
-    },
-    basePath: {
-      type: String,
-      required: true
     },
     yamlChange: {
       type: Boolean,
@@ -458,6 +410,7 @@ export default {
       currentUpdatedServiceTemplateId: '',
       currentUpdatedServiceAutoSync: false,
       currentUpdatedServiceVariableYaml: '',
+      currentUpdatedServiceVariableKvs: [],
       serviceGroup: [],
       allCodeHosts: [],
       openImportYamlDialog: false,
@@ -495,8 +448,7 @@ export default {
     isShared (data) {
       return (
         data.type !== 'kind' &&
-        data.visibility === 'public' &&
-        data.product_name !== this.projectName
+        data.visibility === 'public'
       )
     },
     setHovered (name) {
@@ -509,78 +461,6 @@ export default {
         this.$set(this.showHover, name, false)
       })
     },
-    addSharedService (node, data) {
-      if (this.yamlChange && this.filteredServices.length > 0) {
-        this.askSaveYamlConfig()
-        return
-      }
-      const services = []
-      const payload = this.$utils.cloneObj(this.projectInfo)
-      const projectName = this.projectName
-      this.serviceGroup.forEach((order, orderIndex) => {
-        if (order.children.length > 0) {
-          const serviceStringArray = order.children.map(service => {
-            return service.label
-          })
-          services.push(serviceStringArray)
-        }
-      })
-      services.push([data.service_name])
-      payload.services = services
-      payload.shared_services = (payload.shared_services || []).concat({
-        name: data.service_name,
-        owner: data.product_name
-      })
-      updateEnvTemplateAPI(projectName, payload).then(res => {
-        this.$message.success(this.$t('services.k8s.addSharedServiceSuccess'))
-        this.getServiceGroup()
-        this.$emit('onRefreshProjectInfo')
-        this.$emit('onRefreshService')
-        this.$emit('onRefreshSharedService')
-        this.$emit('update:showNext', true)
-      })
-    },
-    deleteSharedService (node, data) {
-      this.previousNodeKey = ''
-      let deleteText = ''
-      const title = this.$t('global.confirm')
-      const services = []
-      const payload = this.$utils.cloneObj(this.projectInfo)
-      if (data.type === 'k8s') {
-        deleteText = this.$t('services.k8s.confirmToDeleteSharedService', { serviceName: data.service_name })
-      }
-      this.$confirm(`${deleteText}`, `${title}`, {
-        confirmButtonText: this.$t(`global.confirm`),
-        cancelButtonText: this.$t(`global.cancel`),
-        type: 'warning'
-      }).then(() => {
-        const projectName = this.projectName
-        this.serviceGroup.forEach((order, orderIndex) => {
-          if (order.children.length > 0) {
-            const filterArray = order.children.filter(service => {
-              return service.label !== data.service_name
-            })
-            const serviceStringArray = filterArray.map(service => {
-              return service.label
-            })
-            services.push(serviceStringArray)
-          }
-        })
-        payload.services = services
-        payload.shared_services = payload.shared_services.filter(share => {
-          return share.name !== data.service_name
-        })
-        updateEnvTemplateAPI(projectName, payload).then(res => {
-          this.getServiceGroup()
-          this.$emit('onRefreshProjectInfo')
-          this.$emit('onRefreshSharedService')
-          this.$emit('onRefreshService')
-          this.$emit('update:showNext', true)
-          this.$message.success(this.$t('services.k8s.deleteSharedServiceSuccess'))
-          this.$emit('onDeleteService', data.service_name)
-        })
-      })
-    },
     getServiceGroup () {
       this.serviceGroup = []
       const projectName = this.projectName
@@ -588,7 +468,9 @@ export default {
         res.services.push([])
         res.services.forEach((order, orderIndex) => {
           this.serviceGroup.push({
-            label: `${this.$t('services.common.startupSequence')} ${orderIndex}`,
+            label: `${this.$t(
+              'services.common.startupSequence'
+            )} ${orderIndex}`,
             id: orderIndex,
             children: []
           })
@@ -674,7 +556,6 @@ export default {
           )
             .then(res => {
               this.$emit('onRefreshService')
-              this.$emit('onRefreshSharedService')
               this.$emit('update:showNext', true)
               this.getServiceGroup()
               this.dialogImportFromRepoVisible = false
@@ -742,17 +623,31 @@ export default {
       this.showDragContainer = false
     },
     allowDrag (draggingNode) {
-      return !draggingNode.data.label.includes(this.$t('services.common.startupSequence'))
+      return !draggingNode.data.label.includes(
+        this.$t('services.common.startupSequence')
+      )
     },
     allowDrop (draggingNode, dropNode, type) {
-      if (dropNode.data.label.includes(this.$t('services.common.startupSequence')) && type === 'inner') {
+      if (
+        dropNode.data.label.includes(
+          this.$t('services.common.startupSequence')
+        ) &&
+        type === 'inner'
+      ) {
         return true
       } else if (
-        !dropNode.data.label.includes(this.$t('services.common.startupSequence')) &&
+        !dropNode.data.label.includes(
+          this.$t('services.common.startupSequence')
+        ) &&
         type !== 'inner'
       ) {
         return true
-      } else if (dropNode.data.label.includes(this.$t('services.common.startupSequence')) && type === 'prev') {
+      } else if (
+        dropNode.data.label.includes(
+          this.$t('services.common.startupSequence')
+        ) &&
+        type === 'prev'
+      ) {
         return false
       }
     },
@@ -932,7 +827,7 @@ export default {
       const type = this.allCodeHosts.find(item => {
         return item.id === id
       }).type
-      if ((type === 'github') && query !== '') {
+      if (type === 'github' && query !== '') {
         const items = this.$utils.filterObjectArrayByKey(
           'path',
           query,
@@ -1005,6 +900,7 @@ export default {
         this.currentUpdatedServiceTemplateId = data.create_from.template_id
         this.currentUpdatedServiceAutoSync = data.auto_sync
         this.currentUpdatedServiceVariableYaml = data.estimated_merged_variable
+        this.currentUpdatedServiceVariableKvs = data.estimated_merged_variable_kvs
         this.openImportYamlDialog = true
       } else {
         this.dialogImportFromRepoVisible = true
@@ -1047,14 +943,16 @@ export default {
         let deleteText = ''
         const title = this.$t('global.confirm')
         if (data.type === 'k8s') {
-          deleteText = this.$t('services.k8s.confirmToDeleteService', { serviceName: data.service_name })
+          deleteText = this.$t('services.k8s.confirmToDeleteService', {
+            serviceName: data.service_name
+          })
         }
         this.$confirm(`${deleteText}`, `${title}`, {
           confirmButtonText: this.$t(`global.confirm`),
           cancelButtonText: this.$t(`global.cancel`),
           type: 'warning'
         }).then(() => {
-          deleteServiceTemplateAPI(
+          deleteProjectServiceAPI(
             data.service_name,
             data.type,
             this.projectName,
@@ -1064,7 +962,6 @@ export default {
             this.$emit('update:showNext', true)
             this.$emit('onDeleteService', data.service_name)
             this.$emit('onRefreshService')
-            this.$emit('onRefreshSharedService')
             this.getServiceGroup()
             const parent = node.parent
             const children = parent.data.children || parent.data
@@ -1074,38 +971,17 @@ export default {
         })
       }
     },
-    async changeServicePermission (data) {
-      if (data.status === 'added') {
-        const serviceDetail = await serviceTemplateAPI(
-          data.service_name,
-          data.type,
-          this.projectName
-        )
-        serviceDetail.visibility === 'private'
-          ? (serviceDetail.visibility = 'public')
-          : (serviceDetail.visibility = 'private')
-        const res = await updateServicePermissionAPI(
-          this.projectName,
-          serviceDetail
-        )
-        if (res) {
-          this.$emit('onRefreshService')
-          this.$emit('onRefreshSharedService')
-          if (serviceDetail.visibility === 'public') {
-            this.$message.success(this.$t('services.k8s.setSharedServiceSuccess'))
-          } else if (serviceDetail.visibility === 'private') {
-            this.$message.success(this.$t('services.k8s.unsetSharedServiceSuccess'))
-          }
-        }
-      }
-    },
     askSaveYamlConfig (switchNode = false) {
-      return this.$confirm(this.$t('services.k8s.serviceIsNotSaved'), this.$t('global.tips'), {
-        distinguishCancelAndClose: true,
-        confirmButtonText: this.$t(`global.save`),
-        cancelButtonText: this.$t(`global.cancel`),
-        type: 'warning'
-      }).then(() => {
+      return this.$confirm(
+        this.$t('services.k8s.serviceIsNotSaved'),
+        this.$t('global.tips'),
+        {
+          distinguishCancelAndClose: true,
+          confirmButtonText: this.$t(`global.save`),
+          cancelButtonText: this.$t(`global.cancel`),
+          type: 'warning'
+        }
+      ).then(() => {
         this.$emit('updateYaml', switchNode)
       })
     },
@@ -1193,17 +1069,9 @@ export default {
     listenResize () {
       window.screenHeight = document.body.clientHeight
       const serviceTree = this.$refs.serviceTree
-      const serviceSharedTree = this.$refs.serviceSharedTree
       const screenHeight = window.screenHeight - 400
       this.$nextTick(() => {
-        if (serviceSharedTree) {
-          serviceSharedTree.$el.style.maxHeight = 150 + 'px'
-        }
-        if (serviceTree && serviceSharedTree) {
-          serviceTree.$el.style.maxHeight = screenHeight + 'px'
-        } else {
-          serviceTree.$el.style.maxHeight = screenHeight + 180 + 'px'
-        }
+        serviceTree.$el.style.maxHeight = screenHeight + 180 + 'px'
       })
     }
   },
@@ -1226,25 +1094,6 @@ export default {
         element.children = []
         return element
       })
-    },
-    filteredSharedServices () {
-      const services = this.$utils.filterObjectArrayByKey(
-        'service_name',
-        this.searchService,
-        this.sharedServices
-      )
-      return [
-        {
-          label: this.$t('services.k8s.sharedServicesList'),
-          children: services.map((element, index) => {
-            element.visibility = 'public'
-            element.label = element.service_name
-            element.id = index
-            element.children = []
-            return element
-          })
-        }
-      ]
     },
     showSelectFileBtn () {
       return (
@@ -1330,14 +1179,6 @@ export default {
         })
       }
     },
-    filteredSharedServices: {
-      handler (val, old_val) {
-        this.$nextTick(() => {
-          this.listenResize()
-        })
-      },
-      immediate: true
-    },
     currentServiceYamlKinds: {
       handler (val, old_val) {
         this.$nextTick(() => {
@@ -1379,8 +1220,4 @@ export default {
 
 <style lang="less" >
 @import '~@assets/css/component/service-tree.less';
-
-.text-right {
-  text-align: right;
-}
 </style>

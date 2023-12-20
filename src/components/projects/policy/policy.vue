@@ -41,7 +41,7 @@
               <el-tooltip effect="dark" :content="row.display_name" placement="top" :popper-class="row.name ? '' : 'hidden-base-tooltip'">
                 <el-select v-model="row.name" placeholder="请选择基准工作流" filterable size="small" :disabled="!row.add" @change="updateSelectedWorkflow(row)">
                   <el-option v-if="row.display_name" :label="row.display_name" :value="row.name"></el-option>
-                  <el-option v-for="workflow in lastBaseWorkflows" :key="workflow.display_name" :label="workflow.display_name" :value="workflow.name"></el-option>
+                  <el-option v-for="(workflow,workflowIndex) in lastBaseWorkflows" :key="workflowIndex" :label="workflow.display_name" :value="workflow.name"></el-option>
                 </el-select>
               </el-tooltip>
             </el-form-item>
@@ -77,7 +77,6 @@
                     :label="workflow.action"
                     class="permission-item"
                   >
-                    <i :class="[workflow.icon]"></i>
                     {{workflow.alias}}
                   </el-checkbox>
                 </el-checkbox-group>
@@ -146,7 +145,6 @@
                     :label="environment.action"
                     class="permission-item"
                   >
-                    <i :class="[environment.icon]"></i>
                     {{environment.alias}}
                   </el-checkbox>
                 </el-checkbox-group>

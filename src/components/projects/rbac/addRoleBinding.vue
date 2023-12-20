@@ -37,7 +37,7 @@
   </el-dialog>
 </template>
 <script>
-import { usersAPI, addRoleBindingsAPI } from '@/api'
+import { usersAPI, addRoleBindingsAPI } from '@api'
 export default {
   name: 'addRoleBind',
   props: {

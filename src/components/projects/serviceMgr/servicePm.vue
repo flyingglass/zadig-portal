@@ -45,7 +45,7 @@
 import ServiceList from '@/components/projects/common/pm/serviceList.vue'
 import PmConfig from '@/components/projects/common/pm/pmConfig.vue'
 import UpdateEnv from './pm/updateEnv'
-import Policy from './k8s/container/policy.vue'
+import Policy from './k8s/common/policy.vue'
 export default {
   data () {
     return {

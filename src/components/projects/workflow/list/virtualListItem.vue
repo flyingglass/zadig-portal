@@ -8,12 +8,8 @@
     :projectName="workflow.projectName || workflow.project_name"
     :stages="stages"
     :recentTaskStatus="workflow.recentTask?workflow.recentTask.status:''"
-    :recentSuccessID="workflow.recentSuccessfulTask?`#${workflow.recentSuccessfulTask.taskID}`:''"
     :avgRuntime="makeAvgRunTime(workflow)"
     :avgSuccessRate="makeAvgSuccessRate(workflow)"
-    :recentSuccessLink="makeTaskDetailLink(workflow.projectName,workflow.recentSuccessfulTask,workflow.workflow_type)"
-    :recentFailID="workflow.recentFailedTask?`#${workflow.recentFailedTask.taskID}`:''"
-    :recentFailLink="makeTaskDetailLink(workflow.projectName,workflow.recentFailedTask,workflow.workflow_type)"
     :updateTime="$utils.convertTimestamp(workflow.update_time)"
     :description="workflow.description"
     @refreshWorkflow="refreshWorkflow"
@@ -276,17 +272,6 @@ export default {
         return (successRate * 100).toFixed(2) + '%'
       } else {
         return successRate * 100 + '%'
-      }
-    },
-    makeTaskDetailLink (projectName, taskInfo, type) {
-      if (taskInfo) {
-        if (type === 'common_workflow' || type === 'release') {
-          return `/v1/projects/detail/${projectName}/pipelines/custom/${taskInfo.pipelineName}/${taskInfo.taskID}?status=${taskInfo.status}&display_name=${this.workflow.display_name}`
-        } else {
-          return `/v1/projects/detail/${projectName}/pipelines/multi/${taskInfo.pipelineName}/${taskInfo.taskID}?status=${taskInfo.status}&display_name=${this.workflow.display_name}`
-        }
-      } else {
-        return ''
       }
     },
     wordTranslation (word, category, subitem) {

@@ -155,7 +155,7 @@ export default {
       if (newVal) {
         const projectName = newVal
         listProductAPI(projectName).then(res => {
-          this.envList = res
+          this.envList = res.filter(re => !re.production)
         })
       }
     }

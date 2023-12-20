@@ -26,7 +26,6 @@
 import GitRepo from './gitRepo.vue'
 import ChartRepo from './chartRepo.vue'
 import TemplateRepo from './templateRepo.vue'
-import { mapState } from 'vuex'
 export default {
   data () {
     return {
@@ -34,11 +33,15 @@ export default {
     }
   },
   computed: {
-    ...mapState({
-      value: state => state.serviceManage.serviceDialogVisible,
-      currentService: state => state.serviceManage.currentService,
-      serviceSource: state => state.serviceManage.serviceSource
-    })
+    value () {
+      return this.$store.state.serviceHelm.serviceDialogVisible
+    },
+    currentService () {
+      return this.$store.state.serviceHelm.currentService
+    },
+    serviceSource () {
+      return this.$store.state.serviceHelm.serviceSource
+    }
   },
   watch: {
     value: {

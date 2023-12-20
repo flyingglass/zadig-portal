@@ -74,7 +74,7 @@
 </template>
 
 <script>
-import { getRegistryWhenBuildAPI, getAssociatedBuildsAPI } from '@/api'
+import { getRegistryWhenBuildAPI, getAssociatedBuildsAPI } from '@api'
 import EnvTypeSelect from '../envTypeSelect.vue'
 import { validateJobName } from '../../config'
 import AdvancedConfig from '@/components/projects/build/advancedConfig.vue'

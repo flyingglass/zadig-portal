@@ -9,7 +9,7 @@
         <el-table-column :label="`测试 ${item.test_module_name} 的代码库`">
           <template slot-scope="scope">
             <el-row>
-              <template v-if="!scope.row.use_default">
+              <template v-if="!scope.row.hidden">
                 <el-col :span="24">
                   <div class="repo-name-container">
                     <el-tooltip class="item" effect="dark" :content="scope.row.repo_name" placement="top">

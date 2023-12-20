@@ -1,21 +1,21 @@
 <template>
   <div class="settings">
-    <el-form :model="workflowInfo" ref="settings">
+    <el-form :model="settings" ref="settings">
       <div class="mg-b16 title">{{$t(`workflow.runPolicy`)}}</div>
       <el-form-item>
         <span class="mg-r16">
           <span class="text">{{$t(`workflow.concurrentExecution`)}}</span>
-          <el-tooltip effect="dark" content="当同时更新多个不同服务时，产生的多个任务将会并发执行，以提升工作流运行效率" placement="top">
+          <el-tooltip effect="dark" content="当同时更新多个不同服务时，产生的多个任务将会并发执行，以提升工作流运行效率，企业版支持设置并发数量" placement="top">
             <i class="pointer el-icon-question"></i>
           </el-tooltip>
         </span>
-        <el-switch v-model="workflowInfo.multi_run"></el-switch>
+        <el-switch :active-value="-1" :inactive-value="1" v-model="settings.concurrency_limit"></el-switch>
       </el-form-item>
       <div class="mg-b16 mg-t24 title">
         <span>{{$t(`workflow.shareDirectory`)}}</span>
-        <el-button type="text" v-if="!workflowInfo.share_storages ||workflowInfo.share_storages.length===0" @click="addBuildEnv">{{$t(`global.add`)}}</el-button>
+        <el-button type="text" v-if="!settings.share_storages ||settings.share_storages.length===0" @click="addBuildEnv">{{$t(`global.add`)}}</el-button>
       </div>
-      <div v-if="workflowInfo.share_storages&&workflowInfo.share_storages.length>0">
+      <div v-if="settings.share_storages&&settings.share_storages.length>0">
         <el-row :gutter="6" class="th">
           <el-col :span="8">
             <span class="th-title">{{$t(`global.name`)}}</span>
@@ -25,14 +25,14 @@
           </el-col>
         </el-row>
 
-        <el-row :gutter="6" v-for="(item,index) in workflowInfo.share_storages" :key="index">
+        <el-row :gutter="6" v-for="(item,index) in settings.share_storages" :key="index">
           <el-col :span="8">
             <el-form-item
               :prop="'share_storages.' + index + '.name'"
               :rules="{required: true, validator: validateName, trigger: ['blur','change']}"
             >
               <el-input
-                v-model="workflowInfo.share_storages[index].name"
+                v-model="settings.share_storages[index].name"
                 size="small"
                 placeholder="shared-path"
                 @input="update($event,item,'name')"
@@ -60,6 +60,7 @@
 </template>
 
 <script>
+import { cloneDeep } from 'lodash'
 const validateName = (rule, value, callback) => {
   if (value === '') {
     callback(new Error('请输入名称'))
@@ -75,7 +76,8 @@ export default {
   data () {
     return {
       validateName,
-      isShowConfig: false
+      isShowConfig: false,
+      settings: {}
     }
   },
   props: {
@@ -86,12 +88,12 @@ export default {
   },
   methods: {
     addBuildEnv () {
-      if (!this.workflowInfo.share_storages) {
-        this.workflowInfo.share_storages = []
+      if (!this.settings.share_storages) {
+        this.settings.share_storages = []
       }
       this.$refs.settings.validate().then(valid => {
         if (valid) {
-          this.workflowInfo.share_storages.push({
+          this.settings.share_storages.push({
             name: '',
             path: ''
           })
@@ -100,7 +102,7 @@ export default {
       })
     },
     deleteBuildEnv (index) {
-      this.workflowInfo.share_storages.splice(index, 1)
+      this.settings.share_storages.splice(index, 1)
       this.$forceUpdate()
     },
     update (val, item, type) {
@@ -110,8 +112,11 @@ export default {
       return this.$refs.settings.validate()
     },
     getData () {
-      return this.workflowInfo.share_storages
+      return this.settings
     }
+  },
+  created () {
+    this.settings = cloneDeep(this.workflowInfo)
   }
 }
 </script>

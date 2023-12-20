@@ -66,7 +66,7 @@
                           required>
               <el-input v-model="proxyInfo.password"
                         size="small"
-                        show-password></el-input>
+                        type="password"></el-input>
             </el-form-item>
           </template>
           <el-form-item class="margin-top-higher">

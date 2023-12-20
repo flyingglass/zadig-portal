@@ -261,7 +261,7 @@
 <script>
 import {
   listProductAPI,
-  serviceTemplateAPI,
+  getServiceDetailAPI,
   getBuildConfigsAPI,
   getBuildConfigDetailAPI,
   createPmServiceAPI,
@@ -901,7 +901,7 @@ export default {
           this.envNameList = envNameList
         }
 
-        const res = await serviceTemplateAPI(
+        const res = await getServiceDetailAPI(
           pmServiceName,
           'pm',
           projectName
